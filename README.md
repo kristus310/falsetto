@@ -1,3 +1,2 @@
 # Falsetto
-- A guess the lyrics app.
-- Made by Anonymous.
+- A guess the lyrics app made in Django.
