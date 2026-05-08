@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.installed.cfg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+.env
+
+# Testing
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# UV
+.uv/
+.uv_cache/
+
+# Celery
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat-schedule.bak
+celerybeat-schedule.dir
+*.pid
+
+# Frontend
+node_modules/
+
+# Temp & Backup files
+*~
+*.bak
+*.tmp
+
+# Documentation builds
+site/
+docs/_build/
+
+# Environment variations
+.env.*
+!.env.example
+
+# Tailwind
+.django_tailwind_cli/
+assets/css/output.css

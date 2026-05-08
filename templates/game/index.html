@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Guess the Lyrics{% endblock %}
+
+{% block content %}
+
+<section class="hero min-h-[60vh]">
+    <div class="hero-content text-center flex-col max-w-2xl gap-6">
+        <div class="badge badge-primary badge-outline gap-2 p-3">
+            New round, new lyrics!
+        </div>
+        <h1 class="text-5xl md:text-7xl font-black tracking-tight leading-none">
+            Guess the <span class="text-primary">Lyrics</span>
+        </h1>
+        <p class="text-base-content/60 text-lg max-w-md">
+            A snippet drops. You name the song. Simple — unless your music knowledge is just vibes.
+            You name the band. You choose the difficulty. And then you simply test your music knowledge!
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <a href="#" class="btn btn-primary btn-lg">
+                Start playing →
+            </a>
+            <a href="#" class="btn btn-ghost btn-lg">
+                Leaderboard
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="divider max-w-5xl mx-auto px-6"></div>
+
+<section class="py-12 px-6 flex justify-center"> <!-- Added flex and justify-center here -->
+    <div class="stats stats-vertical lg:stats-horizontal shadow"> <!-- Optional: responsive layout -->
+        <div class="stat">
+            <div class="stat-figure text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    class="inline-block h-8 w-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="m9 9 10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163Zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553Z">
+                    </path>
+                </svg>
+            </div>
+            <div class="stat-title">Available songs</div>
+            <div class="stat-value text-primary">100M+</div>
+            <div class="stat-desc">Songs indexed via Last.fm & LRCLIB</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    class="inline-block h-8 w-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z">
+                    </path>
+                </svg>
+            </div>
+            <div class="stat-title">Genres Covered</div>
+            <div class="stat-value text-secondary">All</div>
+            <div class="stat-desc">From Pop to Space Rock</div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <div class="avatar avatar-online">
+                    <div class="w-16 rounded-full">
+                        <img src="https://img.daisyui.com/images/profile/demo/anakeen@192.webp" />
+                    </div>
+                </div>
+            </div>
+            <div class="stat-title">Your Go-To Artists</div>
+            <div class="stat-value">Muse</div>
+            <div class="stat-desc text-secondary">Played 5 times</div>
+        </div>
+        {% else %}
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <div class="avatar">
+                    <div class="w-16 rounded-full">
+                        <img src="{% static 'images/user.png' %}" />
+                    </div>
+                </div>
+            </div>
+            <div class="stat-title">Personal Stats</div>
+            <div class="stat-value text-xl">Private</div>
+            <div class="stat-desc">Log in to track your mastery</div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<div class="divider max-w-5xl mx-auto px-6"></div>
+
+<section class="py-16 px-6 max-w-5xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-10">How it works</h2>
+    <div class="grid md:grid-cols-3 gap-6">
+
+        <div class="card bg-base-200 border border-base-300">
+            <div class="card-body gap-3">
+                <div class="text-4xl">🎯</div>
+                <h3 class="card-title text-base">Pick genre & difficulty</h3>
+                <p class="text-sm text-base-content/60">Choose a genre and dial in how hard you want it — from easy to
+                    absolutely brutal.</p>
+            </div>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300">
+            <div class="card-body gap-3">
+                <div class="text-4xl">📜</div>
+                <h3 class="card-title text-base">Read the snippet</h3>
+                <p class="text-sm text-base-content/60">A fragment of lyrics appears on screen. Could be a whole chorus
+                    or just one cryptic line.</p>
+            </div>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300">
+            <div class="card-body gap-3">
+                <div class="text-4xl">🏆</div>
+                <h3 class="card-title text-base">Guess & score</h3>
+                <p class="text-sm text-base-content/60">Type the song title or artist. Fast and accurate answers score
+                    more. Climb the board.</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+{% if top_scores %}
+<div class="divider max-w-5xl mx-auto px-6"></div>
+
+<section class="py-16 px-6 max-w-2xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">Top players</h2>
+        <a href="#" class="link link-primary text-sm">View all →</a>
+    </div>
+    <div class="flex flex-col gap-2">
+        {% for score in top_scores|slice:":5" %}
+        <div class="flex items-center gap-4 bg-base-200 rounded-xl px-5 py-3 border border-base-300">
+            <span
+                class="font-black text-lg w-6 text-center {% if forloop.counter == 1 %}text-primary{% else %}text-base-content/30{% endif %}">
+                {{ forloop.counter }}
+            </span>
+            <span class="flex-1 text-sm">{{ score.user.username }}</span>
+            <span class="badge badge-primary badge-outline">{{ score.points }} pts</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

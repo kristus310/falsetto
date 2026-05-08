@@ -1,0 +1,29 @@
+<div class="navbar border-b border-base-300 bg-base-100/80 backdrop-blur-sm sticky top-0 z-50">
+    <div class="navbar-start">
+        <div class="dropdown">
+            <div tabindex="0" role="button" class="btn btn-ghost lg:hidden text-xl">
+                &#9776;
+            </div>
+            <ul tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+                <li><a href="#">Play</a></li>
+                <li><a href="#">Leaderboards</a></li>
+            </ul>
+        </div>
+        <a class="btn btn-ghost text-xl">Falsetto</a>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1">
+            <li><a href="#">Play</a></li>
+            <li><a href="#">Leaderboards</a></li>
+        </ul>
+    </div>
+    <div class="navbar-end gap-2">
+        {% if user.is_authenticated %}
+        <span class="text-sm text-base-content/50">{{ user.username }}</span>
+        <a href="{% url 'account_logout' %}" class="btn btn-ghost btn-sm">Log out</a>
+        {% else %}
+        <a href="{% url 'account_login' %}" class="btn btn-ghost btn-sm">Sign in</a>
+        <a href="{% url 'account_signup' %}" class="btn btn-primary btn-sm">Join free</a>
+        {% endif %}
+    </div>
+</div>
