@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from .forms import LyricsGuessForm
 
 def index(request):
     return render(request, "game/index.html")
@@ -7,11 +8,36 @@ def lobby(request):
     return render(request, "game/lobby.html")
 
 def game(request):
-    lyrics = "Far away, this ship is taking me far away. Far away from the ________ of the people who care if I live or die."
+    music = {
+        "artist": "Muse",
+        "song": "Starlight",
+        "lyrics": "Far away, this ship is taking me far away. Far away from the ________ of the people who care if I live or die.",
+        "answer": "memories",
+    }
+    lives = request.session.get("lives", 3)
+    difficulty = request.session.get("lives", "medium")
+    total_rounds = request.session.get("total_rounds", 5)
+    current_round = request.session.get("currend_round", 1)
+
+    if request.method == "POST":
+        form = LyricsGuessForm(request.POST)
+        if form.is_valid():
+            guess = form.cleaned_data['guess'].strip().lower()
+
+            if guess == music['answer'].lower():
+                answered = True
+
+    else:
+        form = LyricsGuessForm()
 
     context = {
-        "lyrics": lyrics,
-        "lives": range(3),
+        "answered": answered,
+        "form": form,
+        "music": music,
+        "lives": range(lives),
+        "difficulty": difficulty,
+        "total_rounds": total_rounds,
+        "current_round": current_round,
     }
 
     return render(request, "game/game.html", context=context)

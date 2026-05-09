@@ -1,29 +1,33 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static widget_tweaks %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block title %}Round {{ current_round }} — Guess the Song{% endblock %}
 
 {% block content %}
 
-<div class="flex flex-col" style="min-height: calc(100vh - 4rem);">
+<div id="game-container" class="flex flex-col min-h-screen">
 
     <!-- TOP HUD -->
-    <div class="flex items-center justify-between px-6 md:px-10 py-4 border-b border-base-300 bg-base-200">
-        <div class="flex items-center">
-            <div class="flex gap-1.5">
-                {% for i in round_range %}
-                <div class="w-3 h-3 rounded-full {% if i <= current_round %}bg-primary{% else %}bg-base-300{% endif %}">
-                </div>
-                {% endfor %}
-            </div>
-            <span class="text-base-content/30 text-m font-bold uppercase tracking-widest">
+    <div
+        class="grid grid-cols-1 md:grid-cols-3 items-center px-4 md:px-10 py-4 gap-4 md:gap-0 border-b border-base-300 bg-base-200">
+
+        <!-- Left: Centered on mobile, aligned start on desktop -->
+        <div class="flex items-center justify-center md:justify-start">
+            <span class="text-base-content/30 text-sm md:text-base font-bold uppercase tracking-widest">
                 Round
             </span>
-            <div class="divider lg:divider-horizontal"></div>
-            <span class="text-base-content/30 text-m font-bold uppercase tracking-widest">
+            <div class="divider divider-horizontal mx-1"></div>
+            <span class="text-base-content/30 text-sm md:text-base font-bold uppercase tracking-widest">
                 {{ current_round }}/{{ total_rounds }}
             </span>
-            <div class="badge badge-error font-bold gap-1">
+        </div>
+
+        <!-- Middle: Always centered -->
+        <div class="flex items-center justify-center">
+            <div class="badge badge-lg badge-error font-bold gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -32,19 +36,20 @@
                 {{ difficulty|capfirst }}
             </div>
         </div>
-        <div class="flex items-center">
-            <span class="text-base-content/30 text-m font-bold uppercase tracking-widest">Lives</span>
-            <div class="divider lg:divider-horizontal"></div>
-            <div>
+
+        <div class="flex items-center justify-center md:justify-end">
+            <span class="text-base-content/30 text-sm md:text-base font-bold uppercase tracking-widest">Lives</span>
+            <div class="divider divider-horizontal mx-1"></div>
+            <div class="flex items-center">
                 {% for live in lives %}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                    class="inline-block h-8 w-8 stroke-current text-error">
+                    class="inline-block h-6 w-6 md:h-8 md:w-8 stroke-current text-error">
                     <path
                         d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" />
                 </svg>
                 {% endfor %}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="inline-block h-8 w-8 stroke-current">
+                    stroke="currentColor" class="inline-block h-6 w-6 md:h-8 md:w-8 stroke-current">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
                 </svg>
@@ -54,9 +59,10 @@
 
 
     <!-- ARTIST BANNER -->
-    <div class="flex items-center justify-between px-6 md:px-10 py-4 border-b border-base-300 bg-primary/5">
+    <div
+        class="flex flex-wrap items-center justify-between px-4 md:px-10 py-4 gap-4 border-b border-base-300 bg-primary/5">
         <div class="flex items-center gap-3">
-            <div class="avatar placeholder">
+            <div class="avatar placeholder hidden sm:flex">
                 <div class="bg-primary/20 text-primary rounded-full w-12">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2">
@@ -66,8 +72,10 @@
                 </div>
             </div>
             <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-base-content/30 leading-none mb-1">Artist</p>
-                <p class="text-2xl font-black text-primary leading-none">{{ artist }}</p>
+                <p class="text-xs font-bold uppercase tracking-widest text-base-content/30 leading-none mb-1">Artist -
+                    Song</p>
+                <p class="text-xl md:text-2xl font-black text-primary leading-none">{{ music.artist }} -
+                    {{ music.song }} </p>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -81,65 +89,45 @@
     </div>
 
     <!-- LYRICS -->
-    <div class="flex-1 flex items-center justify-center px-6 md:px-16 py-10">
-        <p class="text-center font-black italic text-base-content text-3xl md:text-5xl leading-relaxed max-w-2xl">
-            {{ lyrics }}
+    <div class="flex-1 flex items-center justify-center px-4 md:px-16 py-10">
+        <p
+            class="text-center font-black italic text-base-content text-2xl sm:text-3xl md:text-5xl leading-relaxed max-w-2xl">
+            {{ music.lyrics }}
         </p>
     </div>
 
     <!-- ANSWER SECTION -->
-    <div class="border-t border-base-300 bg-base-200 px-6 md:px-10 py-6 flex flex-col gap-4">
+    <div class="border-t border-base-300 bg-base-200 px-4 md:px-10 py-6 flex flex-col gap-4">
 
-        {% if not answered %}
+        <div id="form-container">
+            {% if not answered %}
+            <form hx-post="{% url 'game:game' %}" hx-target="#form-container" hx-select="#form-container"
+                hx-swap="outerHTML" class="flex flex-col sm:flex-row w-full gap-2">
+                {% csrf_token %}
+                {% render_field form.guess class="input input-bordered input-primary flex-1 w-full font-semibold" id="guess-input" placeholder="Song title…" autocomplete="off"%}
 
-        <div class="join w-full">
-            <input id="guess-input" name="guess" type="text" placeholder="Song title…"
-                class="input input-bordered input-primary join-item flex-1 input-lg font-semibold" autocomplete="off" />
-            <button id="guess-btn" class="btn btn-primary join-item btn-lg px-8 gap-2 font-black text-base">
-                Guess
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="flex items-center justify-between">
-            {% if hints_remaining > 0 %}
-            <button id="hint-btn" class="btn btn-ghost btn-sm gap-2 text-base-content/40 hover:text-warning">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-                </svg>
-                Use hint
-                <span class="badge badge-warning badge-outline badge-sm">{{ hints_remaining }} left</span>
-            </button>
-            {% else %}
-            <div></div>
+                <button type="submit" class="btn btn-primary w-full sm:w-auto px-8 gap-2 font-black text-base">
+                    <span class="loading loading-spinner htmx-indicator"></span>
+                    Guess
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                </button>
+            </form>
             {% endif %}
-
-            <button id="skip-btn" class="btn btn-ghost btn-sm gap-2 text-base-content/30 hover:text-error font-bold">
-                Skip
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 0 1 0 1.954l-7.108 4.061A1.125 1.125 0 0 1 3 16.811V8.69ZM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 0 1 0 1.954l-7.108 4.061a1.125 1.125 0 0 1-1.683-.977V8.69Z" />
-                </svg>
-            </button>
         </div>
 
-        <div id="hint-area" class="w-full"></div>
-
-        {% endif %}
-
-        <div id="game-feedback" class="w-full"></div>
+        <div id="game-feedback" class="w-full">
+            {% if form.guess.errors %}
+            <div class="text-error text-sm font-bold mt-2">
+                {{ form.guess.errors|first }}
+            </div>
+            {% endif %}
+        </div>
 
     </div>
 
 </div>
-
-<script>
-</script>
 
 {% endblock %}
