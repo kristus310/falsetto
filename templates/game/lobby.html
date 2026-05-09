@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Set Up Your Round{% endblock %}
+
+{% block content %}
+
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-40">
+    <div class="w-full max-w-xl flex flex-col gap-8">
+
+        <div class="text-center flex flex-col gap-3">
+            <div class="badge badge-secondary badge-outline gap-2 p-3 mx-auto">
+                New round
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none">
+                Set up your <span class="text-primary">round</span>
+            </h1>
+            <p class="text-base-content/50 text-sm max-w-xs mx-auto">
+                Pick an artist and a difficulty, then we'll find a song and drop the lyrics.
+            </p>
+        </div>
+
+        <form method="POST" class="card bg-base-200 border border-base-300 shadow-xl">
+            {% csrf_token %}
+            <div class="card-body gap-6">
+
+                <div class="form-control gap-2">
+                    <label class="label pb-1">
+                        <span class="label-text font-semibold text-base">Artist or band name</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/30 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                class="h-5 w-5 stroke-current">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="m9 9 10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163Zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553Z" />
+                            </svg>
+                        </span>
+                        <input type="text" name="artist" id="artist-input"
+                            placeholder="e.g. Muse, Lady Gaga, The Beatles..."
+                            value="{{ form.artist.value|default:'' }}"
+                            class="input input-bordered w-full  focus:input-primary" autocomplete="off" required />
+                    </div>
+                    {% if form.artist.errors %}
+                    <p class="text-error text-xs mt-1">{{ form.artist.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-control gap-3">
+                    <label class="label pb-1">
+                        <span class="label-text font-semibold text-base">Difficulty</span>
+                    </label>
+                    <div class="grid grid-cols-4 gap-3" id="difficulty-group">
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="difficulty" value="easy" class="sr-only peer"
+                                {% if not form.difficulty.value or form.difficulty.value == 'easy' %}checked{% endif %} />
+                            <div class="peer-checked:border-info peer-checked:bg-info/10 peer-checked:text-info
+                                        border border-info/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
+                                        transition-all hover:border-info/50 text-base-content/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    class="h-6 w-6 stroke-current mb-1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
+                                </svg>
+                                <span class="font-bold text-sm">Easy</span>
+                                <span class="text-xs leading-tight opacity-70">Popular hits</span>
+                            </div>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="difficulty" value="medium" class="sr-only peer"
+                                {% if form.difficulty.value == 'medium' %}checked{% endif %} />
+                            <div class="peer-checked:border-success peer-checked:bg-success/10 peer-checked:text-success
+                                        border border-success/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
+                                        transition-all hover:border-success/50 text-base-content/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    class="h-6 w-6 stroke-current mb-1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75A.75.75 0 0 1 15 2a2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23h-.777ZM2.331 10.727a11.969 11.969 0 0 0-.831 4.398 12 12 0 0 0 .52 3.507C2.28 19.482 3.105 20 3.994 20H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 0 1-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227Z" />
+                                </svg>
+                                <span class="font-bold text-sm">Medium</span>
+                                <span class="text-xs leading-tight opacity-70">Known tracks</span>
+                            </div>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="difficulty" value="hard" class="sr-only peer"
+                                {% if form.difficulty.value == 'hard' %}checked{% endif %} />
+                            <div class="peer-checked:border-warning peer-checked:bg-warning/10 peer-checked:text-warning
+                                        border border-warning/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
+                                        transition-all hover:border-warning/50 text-base-content/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    class="h-6 w-6 stroke-current mb-1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1A3.75 3.75 0 0 0 12 18Z" />
+                                </svg>
+                                <span class="font-bold text-sm">Hard</span>
+                                <span class="text-xs leading-tight opacity-70">Deep cuts</span>
+                            </div>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input type="radio" name="difficulty" value="insane" class="sr-only peer"
+                                {% if form.difficulty.value == 'insane' %}checked{% endif %} />
+                            <div class="peer-checked:border-error peer-checked:bg-error/10 peer-checked:text-error
+                                        border border-error/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
+                                        transition-all hover:border-error/50 text-base-content/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    class="h-6 w-6 stroke-current mb-1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+                                </svg>
+                                <span class="font-bold text-sm">Insane</span>
+                                <span class="text-xs leading-tight opacity-70">True fan!</span>
+                            </div>
+                        </label>
+
+                    </div>
+                </div>
+
+                <div class="form-control gap-2 flex flex-col items-start w-full">
+                    <label class="label pb-1 w-full justify-start gap-1">
+                        <span class="label-text font-semibold text-base">Number of rounds</span>
+                        <span class="label-text-alt text-base-content/40">per game</span>
+                    </label>
+                    <div class="flex items-center gap-3 self-center">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="rounds" value="1" class="sr-only peer" />
+                            <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
+                                        border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                                        hover:border-primary/50 text-base-content/50">1</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="rounds" value="3" class="sr-only peer" checked />
+                            <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
+                                        border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                                        hover:border-primary/50 text-base-content/50">3</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="rounds" value="5" class="sr-only peer" />
+                            <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
+                                        border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                                        hover:border-primary/50 text-base-content/50">5</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="rounds" value="10" class="sr-only peer" />
+                            <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
+                                        border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                                        hover:border-primary/50 text-base-content/50">10</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="card-actions pt-2">
+                    <button type="submit" class="btn btn-secondary btn-lg w-full gap-3">
+                        <span>Start round</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            class="h-5 w-5 stroke-current shrink-0">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+        </form>
+
+        <!-- Back link -->
+        <p class="text-center text-sm text-base-content/30">
+            <a href="{% url 'game:index' %}" class="link link-hover">← Back to home</a>
+        </p>
+
+    </div>
+</div>
+
+{% endblock %}
