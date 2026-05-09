@@ -5,24 +5,44 @@
 
 {% block content %}
 
-<section class="hero min-h-[60vh]">
+<section class="hero min-h-[80vh]">
     <div class="hero-content text-center flex-col max-w-2xl gap-6">
-        <div class="badge badge-primary badge-outline gap-2 p-3">
+        <div class="badge badge-secondary badge-outline gap-2 p-3">
             New round, new lyrics!
         </div>
-        <h1 class="text-5xl md:text-7xl font-black tracking-tight leading-none">
-            Guess the <span class="text-primary">Lyrics</span>
+        <h1 class="text-5xl md:text-7xl font-black text-primary tracking-wide leading-none">
+            Falsetto
+        </h1>
+        <h1 class="text-3xl md:text-5xl font-black tracking-tight leading-none">
+            Guess the <span class="text-secondary">Lyrics</span>
         </h1>
         <p class="text-base-content/60 text-lg max-w-md">
             A snippet drops. You name the song. Simple — unless your music knowledge is just vibes.
             You name the band. You choose the difficulty. And then you simply test your music knowledge!
         </p>
-        <div class="flex flex-col sm:flex-row gap-3">
+
+        <div class="flex flex-col sm:flex-row gap-5">
             <a href="#" class="btn btn-primary btn-lg">
-                Start playing →
+                <div class="flex items-center justify-center gap-3">
+                    <span>Start playing</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        class="h-5 w-5 stroke-current shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z">
+                        </path>
+                    </svg>
+                </div>
             </a>
-            <a href="#" class="btn btn-ghost btn-lg">
-                Leaderboard
+            <a href="#" class="btn btn-accent btn-lg">
+                <div class="flex items-center justify-center gap-3">
+                    <span>Leaderboard</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        class="h-5 w-5 stroke-current shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5.166 2.621v.858c-1.035.148-2.059.33-3.071.543a.75.75 0 0 0-.584.859 6.753 6.753 0 0 0 6.138 5.6 6.73 6.73 0 0 0 2.743 1.346A6.707 6.707 0 0 1 9.279 15H8.54c-1.036 0-1.875.84-1.875 1.875V19.5h-.75a2.25 2.25 0 0 0-2.25 2.25c0 .414.336.75.75.75h15a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-2.25-2.25h-.75v-2.625c0-1.036-.84-1.875-1.875-1.875h-.739a6.706 6.706 0 0 1-1.112-3.173 6.73 6.73 0 0 0 2.743-1.347 6.753 6.753 0 0 0 6.139-5.6.75.75 0 0 0-.585-.858 47.077 47.077 0 0 0-3.07-.543V2.62a.75.75 0 0 0-.658-.744 49.22 49.22 0 0 0-6.093-.377c-2.063 0-4.096.128-6.093.377a.75.75 0 0 0-.657.744Zm0 2.629c0 1.196.312 2.32.857 3.294A5.266 5.266 0 0 1 3.16 5.337a45.6 45.6 0 0 1 2.006-.343v.256Zm13.5 0v-.256c.674.1 1.343.214 2.006.343a5.265 5.265 0 0 1-2.863 3.207 6.72 6.72 0 0 0 .857-3.294Z">
+                        </path>
+                    </svg>
+                </div>
             </a>
         </div>
     </div>
@@ -30,8 +50,8 @@
 
 <div class="divider max-w-5xl mx-auto px-6"></div>
 
-<section class="py-12 px-6 flex justify-center"> <!-- Added flex and justify-center here -->
-    <div class="stats stats-vertical lg:stats-horizontal shadow"> <!-- Optional: responsive layout -->
+<section class="py-12 px-6 flex justify-center">
+    <div class="stats stats-vertical lg:stats-horizontal shadow">
         <div class="stat">
             <div class="stat-figure text-primary">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -98,28 +118,47 @@
 
         <div class="card bg-base-200 border border-base-300">
             <div class="card-body gap-3">
-                <div class="text-4xl">🎯</div>
-                <h3 class="card-title text-base">Pick genre & difficulty</h3>
-                <p class="text-sm text-base-content/60">Choose a genre and dial in how hard you want it — from easy to
-                    absolutely brutal.</p>
+                <div class="text-4xl text-accent">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        class="inline-block h-8 w-8 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8.603 3.799A4.49 4.49 0 0 1 12 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 0 1 3.498 1.307 4.491 4.491 0 0 1 1.307 3.497A4.49 4.49 0 0 1 21.75 12a4.49 4.49 0 0 1-1.549 3.397 4.491 4.491 0 0 1-1.307 3.497 4.491 4.491 0 0 1-3.497 1.307A4.49 4.49 0 0 1 12 21.75a4.49 4.49 0 0 1-3.397-1.549 4.49 4.49 0 0 1-3.498-1.306 4.491 4.491 0 0 1-1.307-3.498A4.49 4.49 0 0 1 2.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 0 1 1.307-3.497 4.49 4.49 0 0 1 3.497-1.307Zm7.007 6.387a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="card-title text-secondary">Enter the artist</h3>
+                <p class="text-sm text-base-content/60">Pick a band or an artist to your liking</p>
             </div>
         </div>
 
         <div class="card bg-base-200 border border-base-300">
             <div class="card-body gap-3">
-                <div class="text-4xl">📜</div>
-                <h3 class="card-title text-base">Read the snippet</h3>
-                <p class="text-sm text-base-content/60">A fragment of lyrics appears on screen. Could be a whole chorus
-                    or just one cryptic line.</p>
+                <div class="text-4xl text-accent">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        class="inline-block h-8 w-8 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12.963 2.286a.75.75 0 0 0-1.071-.136 9.742 9.742 0 0 0-3.539 6.176 7.547 7.547 0 0 1-1.705-1.715.75.75 0 0 0-1.152-.082A9 9 0 1 0 15.68 4.534a7.46 7.46 0 0 1-2.717-2.248ZM15.75 14.25a3.75 3.75 0 1 1-7.313-1.172c.628.465 1.35.81 2.133 1a5.99 5.99 0 0 1 1.925-3.546 3.75 3.75 0 0 1 3.255 3.718Z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="card-title text-primary">Choose a difficulty</h3>
+                <p class="text-sm text-base-content/60">Pick if you want lyrics from more niche songs or from more known
+                    ones</p>
             </div>
         </div>
 
         <div class="card bg-base-200 border border-base-300">
             <div class="card-body gap-3">
-                <div class="text-4xl">🏆</div>
-                <h3 class="card-title text-base">Guess & score</h3>
-                <p class="text-sm text-base-content/60">Type the song title or artist. Fast and accurate answers score
-                    more. Climb the board.</p>
+                <div class="text-4xl text-accent">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        class="inline-block h-8 w-8 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5.166 2.621v.858c-1.035.148-2.059.33-3.071.543a.75.75 0 0 0-.584.859 6.753 6.753 0 0 0 6.138 5.6 6.73 6.73 0 0 0 2.743 1.346A6.707 6.707 0 0 1 9.279 15H8.54c-1.036 0-1.875.84-1.875 1.875V19.5h-.75a2.25 2.25 0 0 0-2.25 2.25c0 .414.336.75.75.75h15a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-2.25-2.25h-.75v-2.625c0-1.036-.84-1.875-1.875-1.875h-.739a6.706 6.706 0 0 1-1.112-3.173 6.73 6.73 0 0 0 2.743-1.347 6.753 6.753 0 0 0 6.139-5.6.75.75 0 0 0-.585-.858 47.077 47.077 0 0 0-3.07-.543V2.62a.75.75 0 0 0-.658-.744 49.22 49.22 0 0 0-6.093-.377c-2.063 0-4.096.128-6.093.377a.75.75 0 0 0-.657.744Zm0 2.629c0 1.196.312 2.32.857 3.294A5.266 5.266 0 0 1 3.16 5.337a45.6 45.6 0 0 1 2.006-.343v.256Zm13.5 0v-.256c.674.1 1.343.214 2.006.343a5.265 5.265 0 0 1-2.863 3.207 6.72 6.72 0 0 0 .857-3.294Z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="card-title text-secondary">Guess & score</h3>
+                <p class="text-sm text-base-content/60">Try to guess to what song the lyrics belong</p>
             </div>
         </div>
 
