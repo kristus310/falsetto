@@ -1,14 +1,24 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from .services import get_top_tracks
+from .services import LastFMAPI
 
+def fetch(request, slug):
+    artist = slug
+    difficulty = "hard"
+    api = LastFMAPI()
 
-def fetch(request):
-    artist_name = "Muse"
-    difficulty = "medium"
-    track_data = get_top_tracks(artist_name, difficulty)
+    piss = []
 
-    if not track_data:
-        return JsonResponse({"error": "Could not fetch tracks"}, status=500)
+    for i in range(3):
+        try:
+            track = api.get_track(artist, difficulty)
 
-    return JsonResponse({"artist": artist_name, "tracks": track_data}, safe=False)
+            if not track:
+                return JsonResponse({"error": f"No tracks found for {artist}"}, status=404)
+
+            piss.append(track)
+
+        except Exception as e:
+            return JsonResponse({"error": "An internal error occurred", "details": str(e)}, status=500)
+
+    return JsonResponse({"track": piss})

@@ -208,9 +208,6 @@ STORAGES = {
 }
 
 
-
-
-
 # Email
 
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
@@ -249,5 +246,6 @@ LOGGING = {
     },
 }
 
-# API KEYS
+# LASTFM
 LASTFM_API_KEY = env("LASTFM_API_KEY")
+LASTFM_BASE_URL = "http://ws.audioscrobbler.com/2.0/"

@@ -26,6 +26,8 @@
         </div>
 
         <!-- Middle: Always centered -->
+        <!--
+
         <div class="flex items-center justify-center">
             <div class="badge badge-lg badge-error font-bold gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
@@ -35,6 +37,15 @@
                 </svg>
                 {{ difficulty|capfirst }}
             </div>
+        </div>
+
+        -->
+
+        <div class="flex items-center justify-center">
+            <button id="reset-button" hx-post="{% url 'game:game' %}?action=reset" hx-target="#game-container"
+                hx-swap="outerHTML" class="btn btn-primary">
+                Reset Game
+            </button>
         </div>
 
         <div class="flex items-center justify-center md:justify-end">
