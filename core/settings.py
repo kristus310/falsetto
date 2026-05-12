@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "widget_tweaks",
     "users",
     "game",
+    "pages",
 ]
 
 MIDDLEWARE = [

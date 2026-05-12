@@ -1,5 +1,5 @@
 <div class="navbar border-b border-base-300 bg-base-200/80 backdrop-blur-sm sticky top-0 z-50">
-    <div class="navbar-start">
+    <div class="navbar-start gap-2 lg:gap-4">
         <div class="dropdown">
             <div tabindex="0" role="button" class="btn btn-ghost lg:hidden text-xl">
                 &#9776;
@@ -7,14 +7,21 @@
             <ul tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
                 <li><a href="{% url 'game:lobby' %}">Play</a></li>
                 <li><a href="#">Leaderboards</a></li>
+                <li><a href="{% url 'pages:about' %}">About</a></li>
+                <li><a href="{% url 'pages:contact' %}">Contact</a></li>
             </ul>
         </div>
-        <a class="btn btn-ghost text-2xl text-primary" href="{% url 'game:index' %}">Falsetto</a>
+        <a class="text-3xl font-black text-primary tracking-wide uppercase hover:opacity-80 transition-opacity"
+            href="{% url 'game:index' %}">
+            False<span class="text-secondary">tt</span>o
+        </a>
     </div>
-    <div class="navbar-center hidden lg:flex">
+    <div class=" navbar-center hidden lg:flex">
         <ul class="menu menu-horizontal px-1">
             <li><a href="{% url 'game:lobby' %}">Play</a></li>
             <li><a href="#">Leaderboards</a></li>
+            <li><a href="{% url 'pages:about' %}">About</a></li>
+            <li><a href="{% url 'pages:contact' %}">Contact</a></li>
         </ul>
     </div>
     <div class="navbar-end gap-2">

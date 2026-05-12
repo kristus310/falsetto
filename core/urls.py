@@ -8,6 +8,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path("users/", include("users.urls", namespace="users")),
     path("lyrics/", include("lyrics.urls", namespace="lyrics")),
+    path("", include("pages.urls", namespace="pages")),
     path("", include("game.urls", namespace="game")),
 ]
 if settings.DEBUG:

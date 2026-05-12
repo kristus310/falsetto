@@ -1,3 +1,17 @@
-<footer class="footer footer-center p-6 border-t bg-base-200 border-base-300 text-base-content/40 text-sm mt-20">
-    <p>Falsetto — Guess the Lyrics!</p>
+<footer class="footer footer-horizontal footer-center bg-base-200 text-base-content rounded p-10">
+    <nav>
+        <a href="{% url 'game:index' %}"
+            class="text-4xl font-black text-primary tracking-wide uppercase hover:opacity-80 transition-opacity">False<span
+                class="text-secondary">tt</span>o</a>
+    </nav>
+    <nav class=" grid grid-flow-col gap-4">
+        <a class="link link-hover" href="#">How to play</a>
+        <a class="link link-hover" href="{% url 'pages:about' %}">About</a>
+        <a class="link link-hover" href="{% url 'pages:contact' %}">Contact</a>
+        <a class="link link-hover" href="{% url 'pages:legal' %}">Legal</a>
+    </nav>
+    </nav>
+    <aside>
+        <p>Copyright © {% now "Y" %} - All right reserved by Kristián Botek</p>
+    </aside>
 </footer>
