@@ -1,8 +1,9 @@
 from django.shortcuts import render
+from django.http import HttpRequest, HttpResponse
 from django.http import JsonResponse
 from .services import LastFMAPI
 
-def fetch(request, artist_slug, difficulty_slug):
+def fetch(request: HttpRequest, artist_slug: str, difficulty_slug: str) -> HttpResponse:
     artist = artist_slug
     difficulty = difficulty_slug
     api = LastFMAPI()

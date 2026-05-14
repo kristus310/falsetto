@@ -11,14 +11,14 @@ from . import helper
 
 logger = logging.getLogger(__name__)
 
-_CACHE_VERSION = "v4"
+_CACHE_VERSION: Final[str] = "v4"
 
 
 class LastFMAPI:
-    _PAGE_LIMIT = 500
-    _MAX_PAGES = 3
+    _PAGE_LIMIT: Final[int] = 500
+    _MAX_PAGES: Final[int] = 3
 
-    DIFFICULTIES = {"easy", "medium", "hard"}
+    DIFFICULTIES: Final[Set[str]] = {"easy", "medium", "hard"}
 
     def __init__(self):
         self.api_key = settings.LASTFM_API_KEY

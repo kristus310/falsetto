@@ -1,17 +1,18 @@
 from django.shortcuts import render, redirect
+from django.http import HttpRequest, HttpResponse
 from .forms import LyricsGuessForm
 from .services import _remove_live
 
-def index(request):
+def index(request: HttpRequest) -> HttpResponse:
     return render(request, "game/index.html")
 
-def lobby(request):
+def lobby(request: HttpRequest) -> HttpResponse:
     return render(request, "game/lobby.html")
 
-def game_over(request):
+def game_over(request: HttpRequest) -> HttpResponse:
     return render(request, "game/game-over.html")
 
-def game(request):
+def game(request: HttpRequest) -> HttpResponse:
     music = {
         "artist": "Muse",
         "song": "Starlight",
