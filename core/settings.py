@@ -150,10 +150,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
 ACCOUNT_ADAPTER = "users.adapters.AccountAdapter"
 ACCOUNT_FORMS = {"signup": "users.forms.UserSignupForm"}
 

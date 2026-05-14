@@ -3,15 +3,15 @@ from django import forms
 
 
 class UserSignupForm(SignupForm):
-    name = forms.CharField(
-        max_length=255,
-        required=False,
-        label="Full name",
-        widget=forms.TextInput(attrs={"placeholder": "Your name (optional)"}),
+    username = forms.CharField(
+        max_length=50,
+        required=True,
+        label="Username",
+        widget=forms.TextInput(attrs={"placeholder": "Pick a username"}),
     )
 
     def save(self, request):
         user = super().save(request)
-        user.name = self.cleaned_data.get("name", "")
-        user.save(update_fields=["name"])
+        user.username = self.cleaned_data.get("username", "")
+        user.save(update_fields=["username"])
         return user

@@ -7,19 +7,18 @@ from .managers import UserManager
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
-    name = models.CharField(max_length=255, blank=True)
+    username = models.CharField(max_length=50, unique=True)
 
     first_name = None
     last_name = None
-    username = None
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username"]
 
     objects = UserManager()
 
     class Meta:
-        verbose_name = 'user'
-        verbose_name_plural = 'users'
+        verbose_name = "user"
+        verbose_name_plural = "users"
 
     def __str__(self):
         return self.email
