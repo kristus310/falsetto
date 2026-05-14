@@ -3,5 +3,5 @@ from . import views
 
 app_name = "lyrics"
 urlpatterns = [
-    path("fetch/<slug:slug>", views.fetch, name="fetch")
+    path("fetch/<slug:artist_slug>/<slug:difficulty_slug>", views.fetch, name="fetch")
 ]
