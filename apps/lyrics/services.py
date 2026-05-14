@@ -10,17 +10,35 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
-_DIRTY_RE = re.compile(
-    r"\b(live|acoustic|remix|remaster(?:ed)?|demo|instrumental|cover|karaoke"
+_VARIANT_RE = re.compile(
+    r"[\(\[\-]"
+    r"[^\)\]]*"
+    r"(live|acoustic|remix|remaster(?:ed)?|demo|instrumental|cover|karaoke"
     r"|version|edit|mix|session|radio|medley|tribute|reprise|interlude|bonus"
-    r"|intro|outro|ft|feat)\b|\(.*?\)|\[.*?\]",
+    r"|intro|outro|ft\.?|feat\.?|single|ep\b|album)"
+    r"[^\)\]]*"
+    r"[\)\]]?"
+    r"|\s*-\s*(single|remaster(?:ed)?|remix|live|acoustic|demo|radio edit"
+    r"|album version|bonus track|instrumental)\s*$",
     re.IGNORECASE,
 )
 
-def _is_clean_track(name: str) -> bool:
-    return not _DIRTY_RE.search(name)
+_PUNCT_RE = re.compile(r"[^\w\s]")
+
+
+def _normalize_title(name: str) -> str:
+    name = _VARIANT_RE.sub("", name)
+    name = _PUNCT_RE.sub("", name)
+    return re.sub(r"\s+", " ", name).strip().lower()
+
+
+def _is_variant(name: str) -> bool:
+    return bool(_VARIANT_RE.search(name))
+
 
 class LastFMAPI:
+    _FETCH_LIMIT = 500
+
     def __init__(self):
         self.api_key = settings.LASTFM_API_KEY
         self.base_url = settings.LASTFM_BASE_URL
@@ -28,34 +46,38 @@ class LastFMAPI:
         retries = Retry(
             total=3,
             backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
+            status_forcelist=[429, 500, 502, 503, 504],
         )
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
     def _get(self, params: dict) -> dict:
         params.update({"api_key": self.api_key, "format": "json"})
         try:
-            response = self.session.get(self.base_url, params=params, timeout=(3.05, 10))
+            response = self.session.get(
+                self.base_url, params=params, timeout=(3.05, 10)
+            )
             response.raise_for_status()
             data = response.json()
             if "error" in data:
-                raise ValueError(f"Last.fm error {data['error']}: {data.get('message')}")
+                raise ValueError(
+                    f"Last.fm error {data['error']}: {data.get('message')}"
+                )
             return data
         except requests.exceptions.RequestException as e:
             logger.error(f"Last.fm API failure: {e}")
             raise
 
-    def get_top_tracks(self, artist: str, limit: int = 200) -> list[dict]:
-        cache_key = f"lastfm:v2:tracks:{artist.lower().replace(' ', '_')}"
+    def get_top_tracks(self, artist: str) -> list[dict]:
+        cache_key = f"lastfm:v3:tracks:{artist.lower().replace(' ', '_')}"
         cached = cache.get(cache_key)
-        if cached:
-            return cached[:limit]
+        if cached is not None:
+            return cached
 
         try:
             data = self._get({
                 "method": "artist.gettoptracks",
                 "artist": artist,
-                "limit": limit,
+                "limit": self._FETCH_LIMIT,
                 "autocorrect": 1,
             })
 
@@ -63,26 +85,12 @@ class LastFMAPI:
             if not raw_tracks:
                 return []
 
-            # Smart Filtering: Adjust floor based on the artist's own scale
-            top_pc = int(raw_tracks[0]["playcount"])
-            abs_floor = 100 if top_pc < 50000 else 500
+            tracks = self._deduplicate(raw_tracks)
+            cache.set(cache_key, tracks, timeout=86400)
+            return tracks
 
-            processed = []
-            for t in raw_tracks:
-                name = t["name"].strip()
-                pc = int(t["playcount"])
-
-                if pc >= abs_floor and _is_clean_track(name):
-                    processed.append({
-                        "name": name,
-                        "playcount": pc,
-                        "mbid": t.get("mbid", "")
-                    })
-
-            cache.set(cache_key, processed, timeout=86400)
-            return processed
         except Exception as e:
-            logger.error(f"Error in get_top_tracks: {e}")
+            logger.error(f"Error in get_top_tracks for '{artist}': {e}")
             return []
 
     def get_track(self, artist: str, difficulty: str) -> dict | None:
@@ -91,28 +99,68 @@ class LastFMAPI:
             return None
 
         count = len(tracks)
+        MIN_POOL = 3
 
-        # SMART SLICING:
-        # We divide the artist's CLEAN tracks into percentiles.
-        # This scales perfectly for superstars (200 tracks) vs niche (20 tracks).
         if difficulty == "easy":
-            # Top 15% of their songs. Weighted heavily by popularity.
-            pool = tracks[:max(1, math.ceil(count * 0.15))]
+            cutoff = max(MIN_POOL, math.ceil(count * 0.20))
+            pool = tracks[:cutoff]
             weights = [t["playcount"] for t in pool]
             return random.choices(pool, weights=weights, k=1)[0]
 
         elif difficulty == "medium":
-            # The "Middle Class" of their discography (15% to 50% mark).
-            start = math.ceil(count * 0.15)
-            end = math.ceil(count * 0.50)
-            pool = tracks[start:end] if start < end else tracks[:5]
-            # Light weighting: still favors known songs but allows deepish cuts
+            start = math.ceil(count * 0.20)
+            end = math.ceil(count * 0.55)
+            pool = tracks[start:end]
+            if len(pool) < MIN_POOL:
+                mid = count // 2
+                half = MIN_POOL // 2
+                pool = tracks[max(0, mid - half): mid + half + 1]
             weights = [math.sqrt(t["playcount"]) for t in pool]
             return random.choices(pool, weights=weights, k=1)[0]
 
-        else: # HARD MODE
-            # The Deep Cuts (Bottom 50% of the available list).
-            # NO WEIGHTING. A song with 500 plays is just as likely as one with 5000.
-            start = math.ceil(count * 0.50)
-            pool = tracks[start:] if start < count else tracks[-5:]
+        else:
+            start = math.ceil(count * 0.55)
+            pool = tracks[start:]
+            if len(pool) < MIN_POOL:
+                pool = tracks[-MIN_POOL:]
             return random.choice(pool)
+
+    def _deduplicate(self, raw_tracks: list[dict]) -> list[dict]:
+        groups: dict[str, list[dict]] = {}
+        for t in raw_tracks:
+            name = t["name"].strip()
+            pc = int(t.get("playcount", 0))
+            key = _normalize_title(name)
+            if not key:
+                continue
+            groups.setdefault(key, []).append({
+                "name": name,
+                "playcount": pc,
+                "mbid": t.get("mbid", ""),
+                "is_variant": _is_variant(name),
+            })
+
+        canonical: list[dict] = []
+        for members in groups.values():
+            total_pc = sum(m["playcount"] for m in members)
+
+            clean = [m for m in members if not m["is_variant"]]
+            pool = clean if clean else members
+            best = max(pool, key=lambda m: m["playcount"])
+
+            canonical.append({
+                "name": best["name"],
+                "playcount": total_pc,
+                "mbid": best["mbid"],
+            })
+
+        if not canonical:
+            return []
+
+        canonical.sort(key=lambda t: t["playcount"], reverse=True)
+        top_pc = canonical[0]["playcount"]
+
+        threshold = max(50, top_pc * 0.005)
+        filtered = [t for t in canonical if t["playcount"] >= threshold]
+
+        return filtered if filtered else canonical[:10]
