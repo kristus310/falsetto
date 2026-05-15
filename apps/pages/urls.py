@@ -7,4 +7,5 @@ urlpatterns: list[URLPattern] = [
     path("about/", views.about, name="about"),
     path("contact/", views.contact, name="contact"),
     path("legal/", views.legal, name="legal"),
+    path("set-theme/", views.set_theme, name="set_theme"),
 ]

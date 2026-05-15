@@ -1,8 +1,23 @@
 <footer class="footer footer-horizontal footer-center bg-base-200 text-base-content rounded p-10">
     <nav>
-        <a href="{% url 'game:index' %}"
-            class="text-4xl font-black text-primary tracking-wide uppercase hover:opacity-80 transition-opacity">False<span
-                class="text-secondary">tt</span>o</a>
+        <a class="flex items-center gap-2 text-3xl font-black text-primary tracking-wide uppercase hover:opacity-80 transition-opacity"
+            href="{% url 'game:index' %}">
+
+            <svg class="h-12 w-12 text-secondary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier">
+                    <path d="M4 10V13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                    <path d="M16 10V13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                    <path d="M7 7L7 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                    <path d="M13 7L13 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                    <path d="M19 7L19 16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                    <path d="M10 4L10 19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                </g>
+            </svg>
+
+            <span>False<span class="text-secondary">tt</span>o</span>
+        </a>
     </nav>
     <nav class=" grid grid-flow-col gap-4">
         <a class="link link-hover" href="#">How to play</a>
