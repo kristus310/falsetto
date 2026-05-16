@@ -9,6 +9,9 @@ def about(request: HttpRequest) -> HttpResponse:
 def contact(request: HttpRequest) -> HttpResponse:
     return render(request, "pages/contact.html")
 
+def faq(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/faq.html")
+
 def legal(request: HttpRequest) -> HttpResponse:
     return render(request, "pages/legal.html")
 

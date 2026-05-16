@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Frequently Asked Questions{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-12">
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold tracking-tight text-base-content mb-3">
+            Frequently Asked Questions
+        </h1>
+        <p class="text-base-content/70 text-lg">
+            Can't find what you're looking for? <a href="{% url 'pages:contact' %}" class="text-primary underline">Reach
+                out to
+                me!</a>
+        </p>
+    </div>
+
+    <div id="game">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-secondary mb-3 mt-10">
+                How to play
+            </h1>
+        </div>
+        <div class="space-y-4">
+            <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-xl shadow-sm">
+                <input type="radio" name="faq-accordion" checked="checked" />
+                <div class="collapse-title text-lg font-medium pt-5">
+                    How do I play?
+                </div>
+                <div class="collapse-content text-base-content/80 pb-5">
+                    <p>In the <a href="{% url 'game:index' %}" class="text-primary underline">homepage</a> click
+                        <span class="text-primary">Play</span> or click <a href="{% url 'game:lobby' %}"
+                            class="text-primary underline">here</a>! Then choose the artist you want to test your
+                        skills on, pick a difficulty and our algorithm will pick the song and lyric for you! Enjoy =]
+                    </p>
+                </div>
+            </div>
+
+            <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-xl shadow-sm">
+                <input type="radio" name="faq-accordion" />
+                <div class="collapse-title text-lg font-medium pt-5">
+                    How many artists are in your game?
+                </div>
+                <div class="collapse-content text-base-content/80 pb-5">
+                    <p>Since <span class="text-primary">Falsetto</span> uses <a href="https://www.last.fm/"
+                            class="text-primary underline">LastFM</a> and <a href="https://lrclib.net/"
+                            class="text-primary underline">LRCLIB</a>, the count is likely to be over 100 million! From
+                        your local niche bands to the most known and beloved bands in the world.</p>
+                </div>
+            </div>
+
+            <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-xl shadow-sm">
+                <input type="radio" name="faq-accordion" />
+                <div class="collapse-title text-lg font-medium pt-5">
+                    I found a bug in your game, what to do?
+                </div>
+                <div class="collapse-content text-base-content/80 pb-5">
+                    <p>For any unwanted errors/bugs, please report them to the team! For more info about contacting us,
+                        go to our <a href="{% url 'pages:contact' %}" class="text-primary underline">contact page</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="contribution">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-secondary mb-3 mt-10">
+                Contributions
+            </h1>
+        </div>
+        <div class="space-y-4">
+            <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-xl shadow-sm">
+                <input type="radio" name="faq-accordion" checked="checked" />
+                <div class="collapse-title text-lg font-medium pt-5">
+                    How do I play?
+                </div>
+                <div class="collapse-content text-base-content/80 pb-5">
+                    <p>In the <a href="{% url 'game:index' %}" class="text-primary underline">homepage</a> click
+                        <span class="text-primary">Play</span> or click <a href="{% url 'game:lobby' %}"
+                            class="text-primary underline">here</a>! Then choose the artist you want to test your
+                        skills on, pick a difficulty and our algorithm will pick the song and lyric for you! Enjoy =]
+                    </p>
+                </div>
+            </div>
+
+            <div class="collapse collapse-arrow bg-base-100 border border-base-300 rounded-xl shadow-sm">
+                <input type="radio" name="faq-accordion" />
+                <div class="collapse-title text-lg font-medium pt-5">
+                    How many artists are in your game?
+                </div>
+                <div class="collapse-content text-base-content/80 pb-5">
+                    <p>Since <span class="text-primary">Falsetto</span> uses <a href="https://www.last.fm/"
+                            class="text-primary underline">LastFM</a> and <a href="https://lrclib.net/"
+                            class="text-primary underline">LRCLIB</a>, the count is likely to be over 100 million! From
+                        your local niche bands to the most known and beloved bands in the world.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
