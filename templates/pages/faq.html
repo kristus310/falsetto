@@ -3,7 +3,7 @@
 {% block title %}Frequently Asked Questions{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto px-6 py-16">
+<div class="max-w-7xl mx-auto px-6 py-16">
 
     <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
         <div class="badge badge-secondary badge-outline p-3 gap-2 uppercase font-bold text-xs tracking-wider">
@@ -19,16 +19,18 @@
         </p>
     </div>
 
-    <div class="grid lg:grid-cols-12 gap-12 items-start">
+    <div class="flex flex-col lg:flex-row justify-center items-start gap-12">
 
         <div
-            class="lg:col-span-3 sticky top-6 bg-base-200 border border-base-300 rounded-2xl p-4 hidden lg:block shadow-sm">
+            class="w-64 sticky top-6 bg-base-200 border border-base-300 rounded-2xl p-4 hidden lg:block shadow-sm shrink-0">
             <ul class="menu w-full p-0 gap-1">
                 <li class="menu-title text-xs uppercase tracking-widest font-black text-base-content/40 px-4 mb-2">
                     Categories</li>
-                <li><a href="#main" class="font-bold text-sm hover:text-primary transition-colors py-2 px-4">Main</a>
+                <li><a href="#main" class="font-bold text-sm hover:text-primary transition-colors py-2 px-4">Main &
+                        Gameplay</a>
                 </li>
                 <li><a href="#account" class="font-bold text-sm hover:text-primary transition-colors py-2 px-4">Account
+                        &
                         Privacy</a></li>
                 <li><a href="#contribution"
                         class="font-bold text-sm hover:text-primary transition-colors py-2 px-4">Contributions &
@@ -36,13 +38,13 @@
             </ul>
         </div>
 
-        <div class="lg:col-span-9 space-y-12">
+        <div class="max-w-3xl w-full space-y-12 flex-1">
 
             <div id="main" class="scroll-mt-6">
                 <div class="flex items-center gap-3 mb-5">
                     <div class="h-6 w-2 rounded-full bg-secondary"></div>
                     <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
-                        Main
+                        Main & Gameplay
                     </h2>
                 </div>
 
@@ -56,12 +58,12 @@
                             How do I play?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6">
-                            <p>In the <a href="{% url 'game:index' %}" class="text-primary underline">homepage</a> click
-                                <span class="text-secondary">Play</span> or click <a href="{% url 'game:lobby' %}"
-                                    class="text-primary underline">here</a>! Then choose the artist you want to test
-                                your
-                                skills on, pick a difficulty and the algorithm will pick the song and lyric for you!
-                                Enjoy =]
+                            <p>
+                                From the homepage, click <span class="font-bold">Play</span> or click <a
+                                    href="{% url 'game:lobby' %}" class="text-primary underline">right here</a>! Choose
+                                the artist you want to test your skills on, pick a difficulty and
+                                <span class="text-primary">Falsetto</span>'s algorithm will generate a lyric snippet
+                                for you to guess.
                             </p>
                         </div>
                     </div>
@@ -73,21 +75,11 @@
                             Do I need to register or log in to play?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6 space-y-4">
-                            <p>No! And that is the beauty of <span class="text-primary">Falsetto</span>! I, <a
-                                    href="{% url 'pages:contact' %}" class="text-primary underline">Kristus310</a>, the
-                                creator,
-                                am big security enthusiast and believer, so I prioritize users
-                                privacy and security.
+                            <p>
+                                No! And that is the beauty of <span class="text-primary">Falsetto</span>. As a security
+                                enthusiast, I prioritize user privacy. You can jump straight into the game and play
+                                completely anonymously!
                             </p>
-                            <div
-                                class="bg-base-200 border-l-4 border-secondary p-4 rounded-r-xl text-sm italic text-base-content/70">
-                                "Arguing that you don't care about the right to privacy because you have nothing to
-                                hide, is no
-                                different than saying you don't care about free speech because you have nothing to
-                                say."
-                                <span class="block mt-2 font-bold text-xs not-italic text-base-content/40">— Edward
-                                    Snowden</span>
-                            </div>
                         </div>
                     </div>
 
@@ -95,16 +87,18 @@
                         <input type="radio" name="faq-accordion-main" />
                         <div
                             class="collapse-title text-lg font-bold text-base-content/90 hover:text-primary transition-colors py-5 px-6">
-                            How many bands/singers are in your game?
+                            How many bands and singers are available?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6">
-                            <p>Since <span class="text-primary">Falsetto</span> uses <a href="https://www.last.fm/"
-                                    class="text-primary underline">LastFM</a> and <a href="https://lrclib.net/"
-                                    class="text-primary underline">LRCLIB</a>, the count is likely to be over 100
-                                million! From
-                                your local niche bands to the most known and beloved bands in the world. Don't be scared
-                                to try
-                                them!</p>
+                            <p>
+                                Since <span class="text-primary">Falsetto</span> grabs the music from <a
+                                    href="https://www.last.fm/" class="text-primary underline" target="_blank"
+                                    rel="noopener noreferrer">LastFM</a> and the lyrics
+                                from <a href="https://lrclib.net/" class="text-primary underline" target="_blank"
+                                    rel="noopener noreferrer">LRCLIB</a>, our
+                                database covers millions and millions of songs. From your local niche band to global pop
+                                icons!
+                            </p>
                         </div>
                     </div>
 
@@ -112,13 +106,14 @@
                         <input type="radio" name="faq-accordion-main" />
                         <div
                             class="collapse-title text-lg font-bold text-base-content/90 hover:text-primary transition-colors py-5 px-6">
-                            I found a bug in your game, what to do?
+                            I found a bug in the game, what should I do?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6">
-                            <p>For any unwanted errors/bugs, please report them to me! For more info about contacting
-                                us,
-                                go to our <a href="{% url 'pages:contact' %}" class="text-primary underline">contact
-                                    page</a>
+                            <p>
+                                For any unwanted errors, bugs or glitches, please report them to me! Include the steps
+                                you did before and the details about the bug. You can find more
+                                info on contacting me on the <a href="{% url 'pages:contact' %}"
+                                    class="text-primary underline">contact page</a>.
                             </p>
                         </div>
                     </div>
@@ -129,7 +124,7 @@
                 <div class="flex items-center gap-3 mb-5">
                     <div class="h-6 w-2 rounded-full bg-primary"></div>
                     <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
-                        Account privacy
+                        Account & Privacy
                     </h2>
                 </div>
 
@@ -140,15 +135,16 @@
                         <input type="radio" name="faq-accordion-account" />
                         <div
                             class="collapse-title text-lg font-bold text-base-content/90 hover:text-primary transition-colors py-5 px-6">
-                            Can I delete my account and all information this site has on me?
+                            Does this site collect any of my data?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6">
-                            <p>Yes, definitely! I, <a href="{% url 'pages:contact' %}"
-                                    class="text-primary underline">Kristus310</a>, the creator,
-                                am big security enthusiast and believer, so I prioritize users
-                                privacy and security, so you don't even have to register to play. You can delete your
-                                account in
-                                your account settings or click <a href="#" class="text-primary underline">here!</a>
+                            <p>
+                                No! And it never will and that is the beauty of <span
+                                    class="text-primary">Falsetto</span>. As a security
+                                enthusiast, I prioritize user privacy.
+                                <br>
+                                If you choose to register, your credentials are securely hashed and the only data that
+                                is kept, is your score and profile info that you put in!
                             </p>
                         </div>
                     </div>
@@ -157,14 +153,16 @@
                         <input type="radio" name="faq-accordion-account" />
                         <div
                             class="collapse-title text-lg font-bold text-base-content/90 hover:text-primary transition-colors py-5 px-6">
-                            Does it store any
+                            Can I delete my account and all associated data with it?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6">
-                            <p>Since <span class="text-primary">Falsetto</span> uses <a href="https://www.last.fm/"
-                                    class="text-primary underline">LastFM</a> and <a href="https://lrclib.net/"
-                                    class="text-primary underline">LRCLIB</a>, the count is likely to be over 100
-                                million! From
-                                your local niche bands to the most known and beloved bands in the world.</p>
+                            <p>
+                                Absolutely! If you did make an account and want to wipe the slate clean, you can
+                                completely delete everything from your <a href="#"
+                                    class="text-primary underline">Account Settings</a>, or by contacting
+                                me via the <a href="{% url 'pages:contact' %}" class="text-primary underline">contact
+                                    page</a>. Your account and everything related to it will be wiped permanently.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -174,7 +172,7 @@
                 <div class="flex items-center gap-3 mb-5">
                     <div class="h-6 w-2 rounded-full bg-accent"></div>
                     <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
-                        Contributions and collaboration
+                        Contributions & Collaboration
                     </h2>
                 </div>
 
@@ -185,15 +183,14 @@
                         <input type="radio" name="faq-accordion-contribution" />
                         <div
                             class="collapse-title text-lg font-bold text-base-content/90 hover:text-primary transition-colors py-5 px-6">
-                            I want to help you with your project
+                            How can I help you or collaborate with you on this project?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6">
-                            <p>In the <a href="{% url 'game:index' %}" class="text-primary underline">homepage</a> click
-                                <span class="text-primary">Play</span> or click <a href="{% url 'game:lobby' %}"
-                                    class="text-primary underline">here</a>! Then choose the artist you want to test
-                                your
-                                skills on, pick a difficulty and our algorithm will pick the song and lyric for you!
-                                Enjoy =]
+                            <p>
+                                I really appreciate the support! If you are a developer, designer or just have any ideas
+                                for improvement and want to collaborate, drop me a message, more info in the <a
+                                    href="{% url 'pages:contact' %}" class="text-primary underline">contact
+                                    page</a>! I will be glad to talk! :]
                             </p>
                         </div>
                     </div>
@@ -202,20 +199,25 @@
                         <input type="radio" name="faq-accordion-contribution" />
                         <div
                             class="collapse-title text-lg font-bold text-base-content/90 hover:text-primary transition-colors py-5 px-6">
-                            How many artists are in your game?
+                            Can I fix incorrect lyrics or add missing songs?
                         </div>
                         <div class="collapse-content text-base-content/80 px-6 pb-6">
-                            <p>Since <span class="text-primary">Falsetto</span> uses <a href="https://www.last.fm/"
-                                    class="text-primary underline">LastFM</a> and <a href="https://lrclib.net/"
-                                    class="text-primary underline">LRCLIB</a>, the count is likely to be over 100
-                                million! From
-                                your local niche bands to the most known and beloved bands in the world.</p>
+                            <p>
+                                Yes, but that is out of my hands! The songs are grabbed from <a
+                                    href="https://www.last.fm/" class="text-primary underline" target="_blank"
+                                    rel="noopener noreferrer">LastFM</a> and the lyrics
+                                from <a href="https://lrclib.net/" class="text-primary underline" target="_blank"
+                                    rel="noopener noreferrer">LRCLIB</a>. For more
+                                info look on their sites!
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
 
         </div>
+
+        <div class="w-64 hidden lg:block shrink-0 pointer-events-none select-none" aria-hidden="true"></div>
     </div>
 </div>
 {% endblock %}

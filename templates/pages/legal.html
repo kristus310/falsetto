@@ -1,7 +1,158 @@
 {% extends "base.html" %}
 
-{% block title %}Legal{% endblock %}
+{% block title %}Legal & Privacy Policy{% endblock %}
 
 {% block content %}
-<h1>Legal</h1>
+<div class="max-w-7xl mx-auto px-6 py-16">
+
+    <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
+        <div class="badge badge-secondary badge-outline p-3 gap-2 uppercase font-bold text-xs tracking-wider">
+            Legal Center
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-base-content leading-none uppercase">
+            Terms & <span class="text-secondary">Privacy</span>
+        </h1>
+        <p class="text-base-content/70 text-lg">
+            Clear, transparent, and straight to the point. No hidden clauses.
+        </p>
+    </div>
+
+    <div class="flex flex-col lg:flex-row justify-center items-start gap-12">
+
+        <div
+            class="w-64 sticky top-6 bg-base-200 border border-base-300 rounded-2xl p-4 hidden lg:block shadow-sm shrink-0">
+            <ul class="menu w-full p-0 gap-1">
+                <li class="menu-title text-xs uppercase tracking-widest font-black text-base-content/40 px-4 mb-2">
+                    Sections
+                </li>
+                <li><a href="#terms" class="font-bold text-sm hover:text-primary transition-colors py-2 px-4">Terms of
+                        Service</a></li>
+                <li><a href="#privacy" class="font-bold text-sm hover:text-primary transition-colors py-2 px-4">Privacy
+                        Policy</a></li>
+                <li><a href="#apis" class="font-bold text-sm hover:text-primary transition-colors py-2 px-4">Third-Party
+                        APIs & Attribution</a></li>
+            </ul>
+        </div>
+
+        <div class="max-w-3xl w-full space-y-16 text-base-content/80 leading-relaxed flex-1">
+
+            <div id="terms" class="scroll-mt-6 space-y-6">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-6 w-2 rounded-full bg-secondary"></div>
+                    <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
+                        Terms of Service
+                    </h2>
+                </div>
+
+                <div class="prose max-w-none space-y-4">
+                    <p>
+                        Welcome to <span class="text-primary font-bold">Falsetto</span>. By accessing or using our game,
+                        you agree to comply with and be bound by these simple Terms of Service.
+                    </p>
+                    <h3 class="text-lg font-bold text-base-content mt-4">1. Acceptable Use</h3>
+                    <p>
+                        Falsetto is built as a fun, educational tool to test your music knowledge. You agree not to
+                        misuse our platform, attempt to scrape music data systematically, or disrupt our game servers.
+                    </p>
+                    <h3 class="text-lg font-bold text-base-content mt-4">2. User Accounts</h3>
+                    <p>
+                        Account creation is completely optional. If you choose to create an account to track your
+                        leaderboard rankings, you are responsible for maintaining the confidentiality of your
+                        credentials. Cheating, botting, or artificially inflating your leaderboard scores may result in
+                        account termination.
+                    </p>
+                </div>
+            </div>
+
+            <hr class="border-base-300" />
+
+            <div id="privacy" class="scroll-mt-6 space-y-6">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-6 w-2 rounded-full bg-primary"></div>
+                    <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
+                        Privacy Policy
+                    </h2>
+                </div>
+
+                <div class="prose max-w-none space-y-4">
+                    <p>
+                        As a security-minded developer, user privacy is paramount. Falsetto is designed around data
+                        minimization.
+                    </p>
+
+                    <div class="bg-base-200 border border-base-300 rounded-2xl p-5 space-y-3">
+                        <h4 class="font-bold text-base-content">What data do we collect?</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-sm">
+                            <li><span class="font-bold text-base-content">Anonymous Players:</span> We do not collect,
+                                track, or save any personal identifier data. You play completely anonymously.</li>
+                            <li><span class="font-bold text-base-content">Registered Users:</span> If you sign up, we
+                                save only your chosen username, your high scores/points, and your cryptographically
+                                hashed credentials (passwords are safely salted and hashed).</li>
+                        </ul>
+                    </div>
+
+                    <h3 class="text-lg font-bold text-base-content mt-4">Data Deletion & Rights</h3>
+                    <p>
+                        You own your data. You can wipe your account data instantly at any time directly through your
+                        Account Settings panel or by reaching out via our
+                        <a href="{% url 'pages:contact' %}" class="link link-primary font-medium">Contact Page</a>. Once
+                        initiated, all your profile data and score records are permanently deleted from our database.
+                    </p>
+                </div>
+            </div>
+
+            <hr class="border-base-300" />
+
+            <div id="apis" class="scroll-mt-6 space-y-6">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-6 w-2 rounded-full bg-accent"></div>
+                    <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
+                        Third-Party APIs & Attribution
+                    </h2>
+                </div>
+
+                <div class="prose max-w-none space-y-4">
+                    <p>
+                        Falsetto is powered by open metadata and developer APIs. We do not host or claim ownership over
+                        the music tracks, metadata, or lyrics served during gameplay.
+                    </p>
+
+                    <div class="card bg-base-100 border border-base-300 shadow-sm p-6 rounded-2xl space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <h3 class="text-md font-bold text-base-content m-0">Music Metadata</h3>
+                            <span
+                                class="badge badge-neutral tracking-wider uppercase text-xs font-bold px-3 py-2">Last.fm
+                                API</span>
+                        </div>
+                        <p class="text-sm">
+                            This application utilizes data provided by the Last.fm API to curate artists, song titles,
+                            and database indexing.
+                            <strong>Please note:</strong> This application is not endorsed, certified, or otherwise
+                            approved by Last.fm. All music catalog details belong to Last.fm and its respective
+                            partners.
+                        </p>
+                    </div>
+
+                    <div class="card bg-base-100 border border-base-300 shadow-sm p-6 rounded-2xl space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <h3 class="text-md font-bold text-base-content m-0">Lyrics Processing</h3>
+                            <span
+                                class="badge badge-neutral tracking-wider uppercase text-xs font-bold px-3 py-2">LRCLIB
+                                API</span>
+                        </div>
+                        <p class="text-sm">
+                            Lyric fragments are fetched dynamically using the LRCLIB engine. All lyrics served by the
+                            game are properties and copyrights of their respective authors, artists, and record labels.
+                            Lyric content is generated solely for gameplay, commentary, and user educational
+                            skill-testing under fair use terms.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="w-64 hidden lg:block shrink-0 pointer-events-none select-none" aria-hidden="true"></div>
+    </div>
+</div>
 {% endblock %}
