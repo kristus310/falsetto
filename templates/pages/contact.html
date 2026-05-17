@@ -1,7 +1,124 @@
 {% extends "base.html" %}
 
-{% block title %}Contact{% endblock %}
+{% block title %}Contact Me{% endblock %}
 
 {% block content %}
-<h1>Contact</h1>
+<div class="max-w-3xl mx-auto px-6 py-16">
+
+    <div class="text-center max-w-2xl mx-auto mb-12 space-y-4">
+        <div class="badge badge-secondary badge-outline p-3 gap-2 uppercase font-bold text-xs tracking-wider">
+            Get In Touch
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-base-content leading-none uppercase">
+            Drop a <span class="text-secondary">Line</span>
+        </h1>
+        <p class="text-base-content/70 text-lg">
+            Have a bug to report, a feature idea, or just want to talk about music? I'd love to hear from you.
+        </p>
+    </div>
+
+    {% if messages %}
+    <div class="mb-8 space-y-2">
+        {% for message in messages %}
+        <div
+            class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %} shadow-sm rounded-2xl">
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl overflow-hidden">
+        <div class="card-body p-6 sm:p-10">
+
+            <form method="POST" action="{% url 'pages:contact' %}" class="space-y-6">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text font-bold text-base-content/80">Your Name</span>
+                        </label>
+                        <input type="text" name="name" placeholder="John Doe" required
+                            class="input input-bordered w-full bg-base-200 focus:input-primary transition-all rounded-xl placeholder:text-base-content/30" />
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text font-bold text-base-content/80">Email Address</span>
+                        </label>
+                        <input type="email" name="email" placeholder="john@example.com" required
+                            class="input input-bordered w-full bg-base-200 focus:input-primary transition-all rounded-xl placeholder:text-base-content/30" />
+                    </div>
+                </div>
+
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text font-bold text-base-content/80">What is this about?</span>
+                    </label>
+                    <select name="subject" required
+                        class="select select-bordered w-full bg-base-200 focus:select-primary transition-all rounded-xl">
+                        <option value="" disabled selected>Select an option...</option>
+                        <option value="bug">Bug Report / Technical Issue</option>
+                        <option value="feature">Feature Suggestion & Ideas</option>
+                        <option value="collaboration">Collaboration / Contribution</option>
+                        <option value="general">Just Saying Hi! :Topic</option>
+                    </select>
+                </div>
+
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text font-bold text-base-content/80">Your Message</span>
+                    </label>
+                    <textarea name="message" placeholder="Type your message here..." required rows="5"
+                        class="textarea textarea-bordered w-full bg-base-200 focus:textarea-primary transition-all rounded-xl text-base placeholder:text-base-content/30"></textarea>
+                </div>
+
+                <p class="text-xs text-base-content/50">
+                    * By submitting, you agree that your message and email are used solely to reply back to you. Your
+                    data is strictly protected and never stored or trackable by external third parties.
+                </p>
+
+                <button type="submit"
+                    class="btn btn-primary btn-block uppercase font-black tracking-wide rounded-xl gap-2 mt-2">
+                    Send Message
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                        stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <div class="text-center mt-12 space-y-3">
+        <div class="divider max-w-md mx-auto opacity-40">OR</div>
+        <p class="text-sm text-base-content/60">
+            Prefer direct channels or checking out source repositories?
+        </p>
+        <div class="flex justify-center gap-4">
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+                class="btn btn-sm btn-ghost gap-2 normal-case rounded-xl text-base-content/80 hover:text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
+                    class="w-4 h-4">
+                    <path
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8" />
+                </svg>
+                GitHub
+            </a>
+            <a href="mailto:hello@falsetto.app"
+                class="btn btn-sm btn-ghost gap-2 normal-case rounded-xl text-base-content/80 hover:text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0l-7.5-4.615m19.5-1.304a2.25 2.25 0 0 0-1.07-1.916l-7.5-4.615a2.25 2.25 0 0 0-2.36 0l-7.5 4.615" />
+                </svg>
+                Direct Email
+            </a>
+        </div>
+    </div>
+
+</div>
 {% endblock %}
