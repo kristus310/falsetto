@@ -14,7 +14,7 @@ _BRACKET_VARIANT_REGEX = re.compile(
     re.IGNORECASE,
 )
 
-_DASH_SUFFIX_RE = re.compile(
+_DASH_SUFFIX_REGEX = re.compile(
     r"\s+-\s+"
     r"(single|ep\b|re-?master(?:ed)?|remix|live|acoustic|demo"
     r"|radio\s+edit|album\s+version|bonus\s+track|instrumental"
