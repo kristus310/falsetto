@@ -4,17 +4,15 @@
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
 
-{% block title %}Round {{ current_round }} — Guess the Song{% endblock %}
+{% block title %}Round {{ current_round }}{% endblock %}
 
 {% block content %}
 
 <div id="game-container" class="flex flex-col min-h-screen">
 
-    <!-- TOP HUD -->
     <div
         class="grid grid-cols-1 md:grid-cols-3 items-center px-4 md:px-10 py-4 gap-4 md:gap-0 border-b border-base-300 bg-base-200">
 
-        <!-- Left: Centered on mobile, aligned start on desktop -->
         <div class="flex items-center justify-center md:justify-start">
             <span class="text-base-content/30 text-sm md:text-base font-bold uppercase tracking-widest">
                 Round
@@ -25,27 +23,23 @@
             </span>
         </div>
 
-        <!-- Middle: Always centered -->
-        <!--
-
-        <div class="flex items-center justify-center">
-            <div class="badge badge-lg badge-error font-bold gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" />
-                </svg>
-                {{ difficulty|capfirst }}
+        <div class="flex items-center justify-center gap-5 ">
+            <div>
+                <div class="badge badge-lg badge-secondary font-bold gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" />
+                    </svg>
+                    {{ difficulty|capfirst }}
+                </div>
             </div>
-        </div>
-
-        -->
-
-        <div class="flex items-center justify-center">
-            <button id="reset-button" hx-post="{% url 'game:game' %}?action=reset" hx-target="#game-container"
-                hx-swap="outerHTML" class="btn btn-primary">
-                Reset Game
-            </button>
+            <div>
+                <button id="quit-button" hx-post="{% url 'game:game' %}?action=quit" hx-target="body"
+                    class="btn btn-primary btn-outline btn-sm">
+                    Leave game
+                </button>
+            </div>
         </div>
 
         <div class="flex items-center justify-center md:justify-end">
@@ -71,8 +65,6 @@
         </div>
     </div>
 
-
-    <!-- ARTIST BANNER -->
     <div
         class="flex flex-wrap items-center justify-between px-4 md:px-10 py-4 gap-4 border-b border-base-300 bg-primary/5">
         <div class="flex items-center gap-3">
@@ -102,7 +94,6 @@
         </div>
     </div>
 
-    <!-- LYRICS -->
     <div class="flex-1 flex items-center justify-center px-4 md:px-16 py-10">
         <p
             class="text-center font-black italic text-base-content text-2xl sm:text-3xl md:text-5xl leading-relaxed max-w-2xl">
@@ -110,18 +101,17 @@
         </p>
     </div>
 
-    <!-- ANSWER SECTION -->
     <div class="border-t border-base-300 bg-base-200 px-4 md:px-10 py-6 flex flex-col gap-4">
 
         <div id="form-container">
             {% if not answered %}
-            <form hx-post="{% url 'game:game' %}" hx-target="#game-container" hx-select="#game-container"
-                hx-swap="outerHTML" class="flex flex-col sm:flex-row w-full gap-2">
+            <form hx-post="{% url 'game:game' %}" hx-target="body" class="flex flex-col sm:flex-row w-full gap-2">
                 {% csrf_token %}
-                {% render_field form.guess class="input input-bordered input-primary flex-1 w-full font-semibold" id="guess-input" placeholder="Song title…" autocomplete="off"%}
+
+                {% render_field form.guess class="input input-bordered input-primary flex-1 w-full font-semibold" id="guess-input" placeholder="Type the missing word…" autocomplete="off"%}
 
                 <button type="submit" class="btn btn-primary w-full sm:w-auto px-8 gap-2 font-black text-base">
-                    <span class="loading loading-spinner htmx-indicator"></span>
+                    <span class="loading loading-spinner htmx-indicator hidden"></span>
                     Guess
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2.5">
@@ -129,13 +119,43 @@
                     </svg>
                 </button>
             </form>
+            {% else %}
+            <div class="flex flex-col items-center gap-4 py-2">
+                <div class="text-success text-2xl font-black flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3"
+                        stroke="currentColor" class="size-8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    Correct! The word was "{{ music.answer|title }}".
+                </div>
+                <form hx-post="{% url 'game:game' %}?action=next" hx-target="body">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="btn btn-success text-success-content px-10 font-black text-lg shadow-lg">
+                        Next Round
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                            stroke="currentColor" class="size-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
             {% endif %}
         </div>
 
         <div id="game-feedback" class="w-full">
             {% if form.guess.errors %}
-            <div class="text-error text-sm font-bold mt-2">
+            <div class="text-error text-center font-bold mt-2">
                 {{ form.guess.errors|first }}
+            </div>
+            {% endif %}
+            {% if messages %}
+            <div class="text-error text-center font-bold mt-2">
+                {% for message in messages %}
+                {{ message }}
+                {% endfor %}
             </div>
             {% endif %}
         </div>
