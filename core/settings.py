@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "users",
     "game",
     "pages",
+    "lyrics",
 ]
 
 MIDDLEWARE = [

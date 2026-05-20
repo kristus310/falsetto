@@ -4,13 +4,14 @@ MANAGE         := uv run manage.py
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install run tailwind-watch migrate migrations shell build collectstatic clean serve
+.PHONY: help install run tailwind-watch migrate migrations shell build collectstatic clean serve test
 
 help:
 	@echo "Available commands:"
 	@echo "  make install        - Setup python, install deps, and tailwind"
 	@echo "  make run            - Start dev server"
 	@echo "  make tailwind-watch - Watch tailwind changes"
+	@echo "  make test           - Run the unit test suite"
 	@echo "  make migrate        - Run migrations"
 	@echo "  make migrations     - Create migrations"
 	@echo "  make superuser      - Create a super user (admin)"
@@ -52,6 +53,9 @@ collectstatic:
 
 serve:
 	uv run gunicorn $(PROJECT_SLUG).wsgi:application --bind 0.0.0.0:8000
+
+test:
+	$(MANAGE) test game lyrics pages users
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
