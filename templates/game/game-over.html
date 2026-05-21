@@ -1,1 +1,78 @@
-<h1>Gameover</h1>
+{% extends "base.html" %}
+{% load static %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block title %}Game Over{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen flex items-center justify-center px-4 py-16">
+    <div class="w-full max-w-lg flex flex-col items-center gap-8 text-center">
+
+        <div class="badge badge-error badge-outline gap-2 p-3">
+            Game over
+        </div>
+
+        <div class="flex flex-col items-center gap-4">
+            <div class="text-6xl">💔</div>
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none text-error">
+                Better luck<br>next time
+            </h1>
+            <p class="text-base-content/50 text-base max-w-sm">
+                You ran out of lives before finishing the round. The music wasn't with you today — try again?
+            </p>
+        </div>
+
+        <div class="divider w-full"></div>
+
+        <div class="stats stats-horizontal shadow w-full">
+            <div class="stat place-items-center">
+                <div class="stat-title">Round reached</div>
+                <div class="stat-value text-error">{{ current_round }}/{{ total_rounds }}</div>
+            </div>
+            <div class="stat place-items-center">
+                <div class="stat-title">Correct</div>
+                <div class="stat-value">{{ correct_count }}</div>
+            </div>
+            <div class="stat place-items-center">
+                <div class="stat-title">Lives lost</div>
+                <div class="stat-value text-error">{{ lives_lost }}</div>
+            </div>
+        </div>
+
+        {% if round_summary %}
+        <div class="w-full flex flex-col gap-2">
+            {% for item in round_summary %}
+            <div
+                class="flex items-center justify-between bg-base-200 border border-base-300 rounded-xl px-4 py-3 text-sm">
+                <span class="text-base-content/60 truncate">{{ item.artist }} — {{ item.song }}</span>
+                {% if item.correct %}
+                <span class="text-success font-bold shrink-0 ml-2">✓ {{ item.answer }}</span>
+                {% else %}
+                <span class="text-error font-bold shrink-0 ml-2">✗ {{ item.answer }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full">
+            <a href="{% url 'game:lobby' %}" class="btn btn-error btn-lg flex-1 gap-2 font-black">
+                Try again
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    class="h-5 w-5 stroke-current shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+            </a>
+            <a href="{% url 'game:index' %}" class="btn btn-outline btn-lg flex-1 font-black">
+                ← Home
+            </a>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

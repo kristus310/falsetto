@@ -1,1 +1,77 @@
-<h1>vyhra</h1>
+{% extends "base.html" %}
+{% load static %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block title %}Victory!{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen flex items-center justify-center px-4 py-16">
+    <div class="w-full max-w-lg flex flex-col items-center gap-8 text-center">
+
+        <div class="badge badge-success badge-outline gap-2 p-3">
+            You won!
+        </div>
+
+        <div class="flex flex-col items-center gap-4">
+            <div class="text-6xl">🏆</div>
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none">
+                Lyric<span class="text-primary">al</span>
+                <span class="text-success">genius</span>
+            </h1>
+            <p class="text-base-content/50 text-base max-w-sm">
+                You nailed every round without running out of lives. Your music knowledge is no joke.
+            </p>
+        </div>
+
+        <div class="divider w-full"></div>
+
+        <div class="stats stats-horizontal shadow w-full">
+            <div class="stat place-items-center">
+                <div class="stat-title">Score</div>
+                <div class="stat-value text-success">{{ correct_count }}/{{ total_rounds }}</div>
+            </div>
+            <div class="stat place-items-center">
+                <div class="stat-title">Lives left</div>
+                <div class="stat-value text-success">{{ lives_remaining }}</div>
+            </div>
+            {% if points %}
+            <div class="stat place-items-center">
+                <div class="stat-title">Points</div>
+                <div class="stat-value text-primary">{{ points }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if round_summary %}
+        <div class="w-full flex flex-col gap-2">
+            {% for item in round_summary %}
+            <div
+                class="flex items-center justify-between bg-base-200 border border-base-300 rounded-xl px-4 py-3 text-sm">
+                <span class="text-base-content/60 truncate">{{ item.artist }} — {{ item.song }}</span>
+                <span class="text-success font-bold shrink-0 ml-2">✓ {{ item.answer }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full">
+            <a href="{% url 'game:lobby' %}" class="btn btn-success btn-lg flex-1 gap-2 font-black">
+                Play again
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    class="h-5 w-5 stroke-current shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+            </a>
+            <a href="{% url 'game:index' %}" class="btn btn-outline btn-lg flex-1 font-black">
+                ← Home
+            </a>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
