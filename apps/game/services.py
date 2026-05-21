@@ -14,14 +14,12 @@ logger = logging.getLogger(__name__)
 
 _PUNCT_RE = re.compile(r"[^\w\s]")
 
-
 def _normalise(text: str) -> str:
     text = unicodedata.normalize("NFD", text)
     text = "".join(c for c in text if unicodedata.category(c) != "Mn")
     text = text.lower()
     text = _PUNCT_RE.sub("", text)
     return " ".join(text.split())
-
 
 def is_correct_guess(guess: str, answer: str) -> bool:
     threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
