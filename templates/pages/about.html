@@ -1,7 +1,139 @@
 {% extends "base.html" %}
 
-{% block title %}About{% endblock %}
+{% block title %}About Falsetto{% endblock %}
 
 {% block content %}
-<h1>About</h1>
+<div class="max-w-5xl mx-auto px-6 py-16">
+
+    <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-base-content leading-none uppercase">
+            About <span class="text-secondary">Falsetto</span>
+        </h1>
+        <p class="text-base-content/70 text-lg">
+            A privacy-first music trivia game built for lyric lovers, casual listeners, and tech enthusiasts.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+
+        <div class="md:col-span-2 space-y-12">
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-6 w-2 rounded-full bg-primary"></div>
+                    <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
+                        What is Falsetto?
+                    </h2>
+                </div>
+                <p class="text-base-content/80 leading-relaxed">
+                    <span class="text-primary font-bold">Falsetto</span> is an open-source web game designed to push
+                    your music knowledge to its limits. By generating dynamic, real-time lyric snippets from your
+                    favorite artists, Falsetto tests how well you truly know the songs spinning in your headphones.
+                </p>
+                <p class="text-base-content/80 leading-relaxed">
+                    Whether you want to test your knowledge on a local niche indie band or global pop icons, our
+                    seamless platform generation serves up customized challenges across varying difficulty levels.
+                </p>
+            </div>
+
+            <div class="space-y-6">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-6 w-2 rounded-full bg-secondary"></div>
+                    <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
+                        Our Core Philosophy
+                    </h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-base-200 border border-base-300 rounded-2xl p-5 space-y-2">
+                        <h3 class="font-bold text-base-content flex items-center gap-2">
+                            Privacy-First Design
+                        </h3>
+                        <p class="text-sm text-base-content/70">
+                            No trackers, no surveillance, no bloated data storage. Play seamlessly as a complete
+                            anonymous user without leaving a digital footprint.
+                        </p>
+                    </div>
+
+                    <div class="bg-base-200 border border-base-300 rounded-2xl p-5 space-y-2">
+                        <h3 class="font-bold text-base-content flex items-center gap-2">
+                            Infinite Library
+                        </h3>
+                        <p class="text-sm text-base-content/70">
+                            By pulling metadata and lyric configurations programmatically via trusted open developer
+                            platforms, our game catalog spans millions of songs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-6 w-2 rounded-full bg-accent"></div>
+                    <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
+                        The Tech Stack
+                    </h2>
+                </div>
+                <p class="text-base-content/80 leading-relaxed">
+                    Falsetto is engineered with a modern, lightweight architectural philosophy. It scales entirely on
+                    server-rendered efficiency with a snappy front-end user experience:
+                </p>
+                <div class="flex flex-wrap gap-2 pt-2">
+                    <span class="badge badge-outline border-base-300 py-3 px-4 rounded-xl font-medium">Python &
+                        Django</span>
+                    <span class="badge badge-outline border-base-300 py-3 px-4 rounded-xl font-medium">HTMX</span>
+                    <span class="badge badge-outline border-base-300 py-3 px-4 rounded-xl font-medium">Tailwind
+                        CSS</span>
+                    <span class="badge badge-outline border-base-300 py-3 px-4 rounded-xl font-medium">DaisyUI</span>
+                    <span class="badge badge-outline border-base-300 py-3 px-4 rounded-xl font-medium">Last.fm
+                        API</span>
+                    <span class="badge badge-outline border-base-300 py-3 px-4 rounded-xl font-medium">LRCLIB
+                        Engine</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-6 space-y-6">
+            <div class="text-center space-y-3">
+                <div class="avatar placeholder">
+                    <div
+                        class="bg-neutral text-neutral-content w-20 h-20 rounded-full mx-auto ring ring-primary ring-offset-base-100 ring-offset-2">
+                        <span class="text-2xl font-black uppercase">KB</span>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-base-content">Kristián Botek</h3>
+                    <p class="text-xs uppercase tracking-wider font-bold text-base-content/40">Creator & Developer</p>
+                </div>
+            </div>
+
+            <hr class="border-base-300" />
+
+            <div class="space-y-3 text-sm text-base-content/80 leading-relaxed">
+                <p>
+                    Hey there! I am a security-minded developer who loves building applications that respect user
+                    freedom and clean engineering.
+                </p>
+                <p>
+                    Falsetto combines my passions for programmatic data structures, modern web security protocols, and
+                    checking out deep musical discographies.
+                </p>
+            </div>
+
+            <div class="space-y-2">
+                <a href="{% url 'game:lobby' %}"
+                    class="btn btn-primary btn-block uppercase font-black tracking-wide rounded-xl">
+                    Start Playing
+                </a>
+                <a href="{% url 'pages:contact' %}"
+                    class="btn btn-ghost btn-block border border-base-300 uppercase font-black tracking-wide rounded-xl">
+                    Get In Touch
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
 {% endblock %}
