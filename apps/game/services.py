@@ -1,12 +1,42 @@
 import random
 import re
+import unicodedata
 import logging
+from difflib import SequenceMatcher
 from typing import Dict, Any, Tuple, Optional
+
+from django.conf import settings
 
 from apps.lyrics.services.api import LastFMAPI, LRCLIBAPI, LyricsResult
 from apps.lyrics.services.api import _LYRIC_FILLER_WORDS
 
 logger = logging.getLogger(__name__)
+
+_PUNCT_RE = re.compile(r"[^\w\s]")
+
+
+def _normalise(text: str) -> str:
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(c for c in text if unicodedata.category(c) != "Mn")
+    text = text.lower()
+    text = _PUNCT_RE.sub("", text)
+    return " ".join(text.split())
+
+
+def is_correct_guess(guess: str, answer: str) -> bool:
+    threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
+    g = _normalise(guess)
+    a = _normalise(answer)
+
+    if not g:
+        return False
+    if g == a:
+        return True
+    if g in a or a in g:
+        return True
+
+    ratio = SequenceMatcher(None, g, a).ratio()
+    return ratio >= threshold
 
 class GameService:
     def __init__(self):

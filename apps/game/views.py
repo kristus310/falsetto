@@ -2,9 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib import messages
 from .forms import LyricsGuessForm
-from .services import GameService
-
-game_service = GameService()
+from .services import GameService, is_correct_guess
 
 def index(request: HttpRequest) -> HttpResponse:
     return render(request, "game/index.html")
@@ -37,6 +35,7 @@ def lobby(request: HttpRequest) -> HttpResponse:
     return render(request, "game/lobby.html")
 
 def game(request: HttpRequest) -> HttpResponse:
+    game_service = GameService()
     artist = request.session.get("game_artist")
     status = request.session.get("game_status", "lobby")
 
@@ -92,10 +91,10 @@ def game(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and not action:
         form = LyricsGuessForm(request.POST)
         if form.is_valid():
-            guess = form.cleaned_data["guess"].strip().lower()
-            correct_answer = music["answer"].lower()
+            guess = form.cleaned_data["guess"].strip()
+            correct_answer = music["answer"]
 
-            if guess == correct_answer:
+            if is_correct_guess(guess, correct_answer):
                 request.session["answered"] = True
                 answered = True
                 request.session["correct_count"] = request.session.get("correct_count", 0) + 1
@@ -160,8 +159,8 @@ def victory(request: HttpRequest) -> HttpResponse:
     return render(request, "game/victory.html", context)
 
 def game_over(request: HttpRequest) -> HttpResponse:
-    #if request.session.get("game_status") != "lost":
-    #    return redirect("game:lobby")
+    if request.session.get("game_status") != "lost":
+        return redirect("game:lobby")
 
     lives = request.session.get("lives", {})
     lives_lost = sum(1 for v in lives.values() if not v)

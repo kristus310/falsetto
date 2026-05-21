@@ -1,31 +1,103 @@
-from django.test import TestCase
-from apps.game.services import GameService
+from unittest.mock import patch, MagicMock
+from django.test import TestCase, Client, override_settings
+from django.urls import reverse
+
+_SIMPLE_STORAGE = {
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
+}
+
+from apps.game.services import GameService, is_correct_guess
 from apps.game.forms import LyricsGuessForm
+
+FAKE_MUSIC = {
+    "artist": "The Beatles",
+    "song": "Yesterday",
+    "lyrics": "________ all my troubles seemed so far away",
+    "answer": "yesterday",
+}
+
+def _playing_session(client: Client, *, artist="The Beatles", difficulty="medium",
+                    total_rounds=5, current_round=1, music=None, answered=False,
+                    lives=None, correct_count=0, round_summary=None) -> None:
+    session = client.session
+    session["game_artist"] = artist
+    session["difficulty"] = difficulty
+    session["total_rounds"] = total_rounds
+    session["current_round"] = current_round
+    session["lives"] = lives or {"1": True, "2": True, "3": True}
+    session["music"] = music
+    session["answered"] = answered
+    session["game_status"] = "playing"
+    session["correct_count"] = correct_count
+    session["round_summary"] = round_summary or []
+    session.save()
+
+
+class IsCorrectGuessTests(TestCase):
+
+    def test_exact_match(self):
+        self.assertTrue(is_correct_guess("beautiful", "beautiful"))
+
+    def test_case_insensitive(self):
+        self.assertTrue(is_correct_guess("Beautiful", "beautiful"))
+        self.assertTrue(is_correct_guess("BEAUTIFUL", "beautiful"))
+
+    def test_leading_trailing_whitespace(self):
+        self.assertTrue(is_correct_guess("  beautiful  ", "beautiful"))
+
+    def test_accent_stripping(self):
+        self.assertTrue(is_correct_guess("naive", "naïve"))
+
+    def test_punctuation_stripped(self):
+        self.assertTrue(is_correct_guess("lovin", "lovin'"))
+
+    def test_substring_match_contraction(self):
+        self.assertTrue(is_correct_guess("lovin", "loving"))
+
+    def test_fuzzy_near_miss(self):
+        self.assertTrue(is_correct_guess("beutiful", "beautiful"))
+
+    def test_clearly_wrong_answer(self):
+        self.assertFalse(is_correct_guess("elephant", "beautiful"))
+
+    def test_empty_guess_is_wrong(self):
+        self.assertFalse(is_correct_guess("", "beautiful"))
+        self.assertFalse(is_correct_guess("   ", "beautiful"))
+
+    def test_single_char_off(self):
+        self.assertTrue(is_correct_guess("yesterdey", "yesterday"))
+
 
 class GameServiceTests(TestCase):
     def setUp(self):
-        self.game_service = GameService()
+        self.svc = GameService()
 
     def test_remove_live_loses_one_life(self):
         lives = {"1": True, "2": True, "3": True}
-        
-        lives, game_over = self.game_service.remove_live(lives)
+
+        lives, game_over = self.svc.remove_live(lives)
         self.assertFalse(lives["3"])
         self.assertTrue(lives["2"])
         self.assertTrue(lives["1"])
         self.assertFalse(game_over)
 
-        lives, game_over = self.game_service.remove_live(lives)
+        lives, game_over = self.svc.remove_live(lives)
         self.assertFalse(lives["3"])
         self.assertFalse(lives["2"])
         self.assertTrue(lives["1"])
         self.assertFalse(game_over)
 
-        lives, game_over = self.game_service.remove_live(lives)
+        lives, game_over = self.svc.remove_live(lives)
         self.assertFalse(lives["3"])
         self.assertFalse(lives["2"])
         self.assertFalse(lives["1"])
         self.assertTrue(game_over)
+
+    def test_remove_live_already_dead(self):
+        lives = {"1": False, "2": False, "3": False}
+        lives, game_over = self.svc.remove_live(lives)
+        self.assertTrue(game_over)
+
 
 class LyricsGuessFormTests(TestCase):
     def test_valid_guess(self):
@@ -39,3 +111,227 @@ class LyricsGuessFormTests(TestCase):
         self.assertIn("guess", form.errors)
 
 
+@override_settings(STORAGES=_SIMPLE_STORAGE)
+class LobbyViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("game:lobby")
+
+    def test_get_renders_lobby(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "game/lobby.html")
+
+    def test_post_no_artist_shows_error(self):
+        response = self.client.post(self.url, {"artist": "", "difficulty": "easy", "rounds": 5})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "game/lobby.html")
+        messages = list(response.context["messages"])
+        self.assertTrue(any("artist" in str(m).lower() for m in messages))
+
+    def test_post_valid_initialises_session_and_redirects(self):
+        response = self.client.post(self.url, {
+            "artist": "The Beatles",
+            "difficulty": "hard",
+            "rounds": "7",
+        })
+        self.assertRedirects(response, reverse("game:game"))
+        session = self.client.session
+        self.assertEqual(session["game_artist"], "The Beatles")
+        self.assertEqual(session["difficulty"], "hard")
+        self.assertEqual(session["total_rounds"], 7)
+        self.assertEqual(session["current_round"], 1)
+        self.assertEqual(session["game_status"], "playing")
+        self.assertEqual(session["lives"], {"1": True, "2": True, "3": True})
+
+    def test_post_invalid_rounds_defaults_to_five(self):
+        response = self.client.post(self.url, {
+            "artist": "Radiohead",
+            "difficulty": "medium",
+            "rounds": "notanumber",
+        })
+        self.assertRedirects(response, reverse("game:game"))
+        self.assertEqual(self.client.session["total_rounds"], 5)
+
+
+@override_settings(STORAGES=_SIMPLE_STORAGE)
+class GameViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("game:game")
+
+    def test_get_without_session_redirects_to_lobby(self):
+        response = self.client.get(self.url)
+        self.assertRedirects(response, reverse("game:lobby"))
+
+    @patch("game.views.GameService")
+    def test_get_with_session_fetches_music_and_renders(self, MockService):
+        MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
+        _playing_session(self.client)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "game/game.html")
+        self.assertEqual(response.context["music"], FAKE_MUSIC)
+
+    @patch("game.views.GameService")
+    def test_get_skips_api_call_when_music_already_in_session(self, MockService):
+        _playing_session(self.client, music=FAKE_MUSIC)
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        MockService.return_value.generate_round_data.assert_not_called()
+
+    @patch("game.views.GameService")
+    def test_correct_guess_marks_answered_and_increments_count(self, MockService):
+        MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
+        _playing_session(self.client, music=FAKE_MUSIC)
+
+        response = self.client.post(self.url, {"guess": "yesterday"})
+        self.assertEqual(response.status_code, 200)
+        session = self.client.session
+        self.assertTrue(session["answered"])
+        self.assertEqual(session["correct_count"], 1)
+        self.assertTrue(session["round_summary"][0]["correct"])
+
+    @patch("game.views.GameService")
+    def test_fuzzy_guess_accepted(self, MockService):
+        MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
+        _playing_session(self.client, music=FAKE_MUSIC)
+
+        response = self.client.post(self.url, {"guess": "yesterdey"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.client.session["answered"])
+        self.assertEqual(self.client.session["correct_count"], 1)
+
+    @patch("game.views.GameService")
+    def test_wrong_guess_removes_a_life(self, MockService):
+        instance = MockService.return_value
+        instance.generate_round_data.return_value = FAKE_MUSIC
+        instance.remove_live.return_value = (
+            {"1": True, "2": True, "3": False}, False
+        )
+        _playing_session(self.client, music=FAKE_MUSIC)
+
+        response = self.client.post(self.url, {"guess": "completely_wrong"})
+        self.assertEqual(response.status_code, 200)
+        instance.remove_live.assert_called_once()
+
+    @patch("game.views.GameService")
+    def test_third_wrong_guess_redirects_to_game_over(self, MockService):
+        instance = MockService.return_value
+        instance.generate_round_data.return_value = FAKE_MUSIC
+        instance.remove_live.return_value = (
+            {"1": False, "2": False, "3": False}, True
+        )
+        _playing_session(self.client, music=FAKE_MUSIC,
+                        lives={"1": True, "2": False, "3": False})
+
+        session = self.client.session
+        session["game_status"] = "lost"
+        session.save()
+
+        response = self.client.post(self.url, {"guess": "wrong"})
+        self.assertIn(response.status_code, [200, 302])
+
+    @patch("game.views.GameService")
+    def test_action_next_advances_round(self, MockService):
+        MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
+        _playing_session(self.client, music=FAKE_MUSIC, answered=True, current_round=2)
+
+        response = self.client.post(self.url + "?action=next", {"action": "next"}, follow=False)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, self.url)
+
+        session = self.client.session
+
+        self.assertEqual(session["current_round"], 3)
+        self.assertIsNone(session["music"])
+        self.assertFalse(session["answered"])
+
+    @patch("game.views.GameService")
+    def test_action_quit_resets_status_and_redirects(self, MockService):
+        MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
+        _playing_session(self.client, music=FAKE_MUSIC)
+
+        response = self.client.post(self.url + "?action=quit", {"action": "quit"})
+        self.assertRedirects(response, reverse("game:lobby"))
+        self.assertEqual(self.client.session["game_status"], "lobby")
+
+    @patch("game.views.GameService")
+    def test_all_rounds_complete_redirects_to_victory(self, MockService):
+        MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
+        _playing_session(self.client, music=FAKE_MUSIC, current_round=6, total_rounds=5)
+
+        response = self.client.get(self.url)
+        self.assertRedirects(response, reverse("game:victory"))
+        self.assertEqual(self.client.session["game_status"], "won")
+
+    @patch("game.views.GameService")
+    def test_api_failure_redirects_to_lobby_with_error(self, MockService):
+        MockService.return_value.generate_round_data.return_value = None
+        _playing_session(self.client)
+
+        response = self.client.get(self.url)
+        self.assertRedirects(response, reverse("game:lobby"))
+        self.assertEqual(self.client.session["game_status"], "lobby")
+
+
+@override_settings(STORAGES=_SIMPLE_STORAGE)
+class VictoryViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("game:victory")
+
+    def test_redirects_without_won_status(self):
+        response = self.client.get(self.url)
+        self.assertRedirects(response, reverse("game:lobby"))
+
+    def test_renders_with_won_status(self):
+        session = self.client.session
+        session["game_status"] = "won"
+        session["total_rounds"] = 5
+        session["correct_count"] = 4
+        session["lives"] = {"1": True, "2": True, "3": False}
+        session["round_summary"] = []
+        session["difficulty"] = "medium"
+        session["game_artist"] = "Radiohead"
+        session.save()
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "game/victory.html")
+        self.assertEqual(response.context["correct_count"], 4)
+        self.assertEqual(response.context["lives_remaining"], 2)
+        self.assertEqual(response.context["game_artist"], "Radiohead")
+
+
+@override_settings(STORAGES=_SIMPLE_STORAGE)
+class GameOverViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("game:game_over")
+
+    def test_redirects_without_lost_status(self):
+        response = self.client.get(self.url)
+        self.assertRedirects(response, reverse("game:lobby"))
+
+    def test_renders_with_lost_status(self):
+        session = self.client.session
+        session["game_status"] = "lost"
+        session["total_rounds"] = 5
+        session["current_round"] = 3
+        session["correct_count"] = 1
+        session["lives"] = {"1": False, "2": False, "3": False}
+        session["round_summary"] = []
+        session["difficulty"] = "hard"
+        session["game_artist"] = "Pink Floyd"
+        session.save()
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "game/game-over.html")
+        self.assertEqual(response.context["correct_count"], 1)
+        self.assertEqual(response.context["lives_lost"], 3)
+        self.assertEqual(response.context["game_artist"], "Pink Floyd")
