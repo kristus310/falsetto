@@ -54,7 +54,7 @@ serve:
 	uv run gunicorn $(PROJECT_SLUG).wsgi:application --bind 0.0.0.0:8000
 
 test:
-	$(MANAGE) test --pattern="tests.py" --verbosity=2
+	$(MANAGE) test apps --pattern="tests.py" --verbosity=2
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
