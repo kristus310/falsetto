@@ -20,7 +20,6 @@ help:
 	@echo "  make clean          - Remove pycache and temporary files"
 	@echo "  make serve          - Run production gunicorn server"
 
-
 install:
 	mise use python@$(PYTHON_VERSION)
 	uv sync --python $$(mise which python)
@@ -55,7 +54,7 @@ serve:
 	uv run gunicorn $(PROJECT_SLUG).wsgi:application --bind 0.0.0.0:8000
 
 test:
-	$(MANAGE) test game lyrics pages users
+	$(MANAGE) test --pattern="tests.py" --verbosity=2
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +

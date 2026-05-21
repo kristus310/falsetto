@@ -71,11 +71,12 @@ The project uses **mise** to handle tool versions and **uv** for lightning-fast 
 
 ### Everyday Terminal Shortcuts
 
-* make run            - Starts the local development server so you can play the app in your browser.
-* make tailwind-watch - Automatically watches your template files and live-compiles styling changes.
-* make migrations     - Generates database changes after you edit database structures.
-* make migrate        - Applies pending database updates to your local database.
-* make superuser      - Creates an administrator account for the Django backend.
-* make build          - Prepares the project for production (builds styles and gathers static files).
-* make clean          - Deletes temporary cache folders and junk files to keep the project tidy.
-* make serve          - Runs the app in a production-ready mode via a Gunicorn server.
+* make run              - Starts the local development server so you can play the app in your browser.
+* make tailwind-watch   - Automatically watches your template files and live-compiles styling changes.
+* make migrations       - Generates database changes after you edit database structures.
+* make migrate          - Applies pending database updates to your local database.
+* make superuser        - Creates an administrator account for the Django backend.
+* make build            - Prepares the project for production (builds styles and gathers static files).
+* make clean            - Deletes temporary cache folders and junk files to keep the project tidy.
+* make serve            - Runs the app in a production-ready mode via a Gunicorn server.
+* make test             - Runs the entire automated unit test suite across all application modules using auto-discovery.
