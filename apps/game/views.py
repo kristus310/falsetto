@@ -160,8 +160,8 @@ def victory(request: HttpRequest) -> HttpResponse:
     return render(request, "game/victory.html", context)
 
 def game_over(request: HttpRequest) -> HttpResponse:
-    if request.session.get("game_status") != "lost":
-        return redirect("game:lobby")
+    #if request.session.get("game_status") != "lost":
+    #    return redirect("game:lobby")
 
     lives = request.session.get("lives", {})
     lives_lost = sum(1 for v in lives.values() if not v)

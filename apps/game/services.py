@@ -13,9 +13,6 @@ class GameService:
         self.lastfm = LastFMAPI()
         self.lrclib = LRCLIBAPI()
 
-    def check_game_start(self, artist: str) -> bool:
-        return bool(artist)
-
     def remove_live(self, lives: Dict[str, bool]) -> Tuple[Dict[str, bool], bool]:
         updated_lives = lives.copy()
         for key in sorted(updated_lives.keys(), reverse=True):
