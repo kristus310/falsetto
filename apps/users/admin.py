@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import User
-
+from .models import User, UserScore
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -23,3 +22,10 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('email', 'username', 'password1', 'password2'),
         }),
     )
+
+@admin.register(UserScore)
+class UserScoreAdmin(admin.ModelAdmin):
+    list_display = ['user', 'artist', 'difficulty', 'score', 'completed', 'created_at']
+    list_filter = ['difficulty', 'completed', 'created_at']
+    search_fields = ['user__email', 'artist']
+    ordering = ['-score']

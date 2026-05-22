@@ -14,6 +14,24 @@ logger = logging.getLogger(__name__)
 
 _PUNCT_RE = re.compile(r"[^\w\s]")
 
+_DIFFICULTY_MULTIPLIER: Dict[str, float] = {
+    "easy": 1.0,
+    "medium": 1.5,
+    "hard": 2.5,
+    "insane": 4.0,
+}
+_BASE_SCORE = 100
+_LIVES_BONUS_PER_LIFE = 10
+_STREAK_BONUS_PER_ROUND = 15
+
+
+def calculate_score(difficulty: str, lives: Dict[str, bool], streak: int) -> int:
+    multiplier = _DIFFICULTY_MULTIPLIER.get(difficulty, 1.0)
+    lives_remaining = sum(1 for v in lives.values() if v)
+    lives_bonus = lives_remaining * _LIVES_BONUS_PER_LIFE
+    streak_bonus = streak * _STREAK_BONUS_PER_ROUND
+    return int((_BASE_SCORE + lives_bonus + streak_bonus) * multiplier)
+
 def _normalise(text: str) -> str:
     text = unicodedata.normalize("NFD", text)
     text = "".join(c for c in text if unicodedata.category(c) != "Mn")

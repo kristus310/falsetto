@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib import messages
 from .forms import LyricsGuessForm
-from .services import GameService, is_correct_guess
+from .services import GameService, is_correct_guess, calculate_score
+
+from apps.users.models import UserScore
 
 def index(request: HttpRequest) -> HttpResponse:
     return render(request, "game/index.html")
@@ -13,6 +15,7 @@ def lobby(request: HttpRequest) -> HttpResponse:
         difficulty = request.POST.get("difficulty", "medium")
         try:
             total_rounds = int(request.POST.get("rounds", 5))
+            total_rounds = max(1, min(total_rounds, 20))
         except ValueError:
             total_rounds = 5
 
@@ -29,7 +32,10 @@ def lobby(request: HttpRequest) -> HttpResponse:
         request.session["answered"] = False
         request.session["game_status"] = "playing"
         request.session["correct_count"] = 0
+        request.session["score"] = 0
+        request.session["streak"] = 0
         request.session["round_summary"] = []
+        request.session["score_saved"] = False
 
         return redirect("game:game")
     return render(request, "game/lobby.html")
@@ -61,6 +67,10 @@ def game(request: HttpRequest) -> HttpResponse:
             return redirect("game:lobby")
 
         elif action == "next" and answered:
+            if current_round >= total_rounds:
+                request.session["game_status"] = "won"
+                return redirect("game:victory")
+
             request.session["current_round"] = current_round + 1
             request.session["music"] = None
             request.session["answered"] = False
@@ -98,16 +108,24 @@ def game(request: HttpRequest) -> HttpResponse:
                 request.session["answered"] = True
                 answered = True
                 request.session["correct_count"] = request.session.get("correct_count", 0) + 1
+
+                streak = request.session.get("streak", 0) + 1
+                request.session["streak"] = streak
+                round_score = calculate_score(difficulty, lives, streak)
+                request.session["score"] = request.session.get("score", 0) + round_score
+
                 summary = request.session.get("round_summary", [])
                 summary.append({
                     "artist": music["artist"],
                     "song": music["song"],
                     "answer": music["answer"],
                     "correct": True,
+                    "round_score": round_score,
                 })
                 request.session["round_summary"] = summary
                 request.session.modified = True
             else:
+                request.session["streak"] = 0
                 lives, is_dead = game_service.remove_live(lives)
                 request.session["lives"] = lives
                 request.session.modified = True
@@ -148,13 +166,32 @@ def victory(request: HttpRequest) -> HttpResponse:
     lives = request.session.get("lives", {})
     lives_remaining = sum(1 for v in lives.values() if v)
 
+    score = request.session.get("score", 0)
+    correct_count = request.session.get("correct_count", 0)
+    total_rounds = request.session.get("total_rounds", 0)
+    difficulty = request.session.get("difficulty", "medium")
+    artist = request.session.get("game_artist", "")
+
+    if request.user.is_authenticated and not request.session.get("score_saved", False):
+        UserScore.objects.create(
+            user=request.user,
+            artist=artist,
+            difficulty=difficulty,
+            score=score,
+            correct_count=correct_count,
+            total_rounds=total_rounds,
+            completed=True
+        )
+        request.session["score_saved"] = True
+
     context = {
-        "total_rounds": request.session.get("total_rounds", 0),
-        "correct_count": request.session.get("correct_count", 0),
+        "total_rounds": total_rounds,
+        "correct_count": correct_count,
+        "score": score,
         "lives_remaining": lives_remaining,
         "round_summary": request.session.get("round_summary", []),
-        "difficulty": request.session.get("difficulty", ""),
-        "game_artist": request.session.get("game_artist", ""),
+        "difficulty": difficulty,
+        "game_artist": artist,
     }
     return render(request, "game/victory.html", context)
 
@@ -165,13 +202,32 @@ def game_over(request: HttpRequest) -> HttpResponse:
     lives = request.session.get("lives", {})
     lives_lost = sum(1 for v in lives.values() if not v)
 
+    score = request.session.get("score", 0)
+    correct_count = request.session.get("correct_count", 0)
+    total_rounds = request.session.get("total_rounds", 0)
+    difficulty = request.session.get("difficulty", "medium")
+    artist = request.session.get("game_artist", "")
+
+    if request.user.is_authenticated and not request.session.get("score_saved", False):
+        UserScore.objects.create(
+            user=request.user,
+            artist=artist,
+            difficulty=difficulty,
+            score=score,
+            correct_count=correct_count,
+            total_rounds=total_rounds,
+            completed=False
+        )
+        request.session["score_saved"] = True
+
     context = {
-        "total_rounds": request.session.get("total_rounds", 0),
+        "total_rounds": total_rounds,
         "current_round": request.session.get("current_round", 0),
-        "correct_count": request.session.get("correct_count", 0),
+        "correct_count": correct_count,
+        "score": score,
         "lives_lost": lives_lost,
         "round_summary": request.session.get("round_summary", []),
-        "difficulty": request.session.get("difficulty", ""),
-        "game_artist": request.session.get("game_artist", ""),
+        "difficulty": difficulty,
+        "game_artist": artist,
     }
     return render(request, "game/game-over.html", context)

@@ -6,7 +6,7 @@ _SIMPLE_STORAGE = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
 }
 
-from apps.game.services import GameService, is_correct_guess
+from apps.game.services import GameService, is_correct_guess, calculate_score
 from apps.game.forms import LyricsGuessForm
 
 FAKE_MUSIC = {
@@ -18,7 +18,8 @@ FAKE_MUSIC = {
 
 def _playing_session(client: Client, *, artist="The Beatles", difficulty="medium",
                     total_rounds=5, current_round=1, music=None, answered=False,
-                    lives=None, correct_count=0, round_summary=None) -> None:
+                    lives=None, correct_count=0, round_summary=None,
+                    score=0, streak=0) -> None:
     session = client.session
     session["game_artist"] = artist
     session["difficulty"] = difficulty
@@ -30,6 +31,8 @@ def _playing_session(client: Client, *, artist="The Beatles", difficulty="medium
     session["game_status"] = "playing"
     session["correct_count"] = correct_count
     session["round_summary"] = round_summary or []
+    session["score"] = score
+    session["streak"] = streak
     session.save()
 
 
@@ -99,6 +102,46 @@ class GameServiceTests(TestCase):
         self.assertTrue(game_over)
 
 
+class CalculateScoreTests(TestCase):
+
+    def _full_lives(self):
+        return {"1": True, "2": True, "3": True}
+
+    def test_easy_no_streak(self):
+        # (100 + 3×10 + 1×15) × 1.0 = 145
+        score = calculate_score("easy", self._full_lives(), streak=1)
+        self.assertEqual(score, 145)
+
+    def test_medium_no_streak(self):
+        # (100 + 3×10 + 1×15) × 1.5 = 217
+        score = calculate_score("medium", self._full_lives(), streak=1)
+        self.assertEqual(score, 217)
+
+    def test_hard_no_streak(self):
+        # (100 + 3×10 + 1×15) × 2.5 = 362
+        score = calculate_score("hard", self._full_lives(), streak=1)
+        self.assertEqual(score, 362)
+
+    def test_streak_increases_score(self):
+        s1 = calculate_score("medium", self._full_lives(), streak=1)
+        s5 = calculate_score("medium", self._full_lives(), streak=5)
+        self.assertGreater(s5, s1)
+
+    def test_fewer_lives_lowers_score(self):
+        full = calculate_score("medium", {"1": True, "2": True, "3": True}, streak=1)
+        one_left = calculate_score("medium", {"1": True, "2": False, "3": False}, streak=1)
+        self.assertGreater(full, one_left)
+
+    def test_unknown_difficulty_defaults_to_easy_multiplier(self):
+        known = calculate_score("easy", self._full_lives(), streak=1)
+        unknown = calculate_score("legendary", self._full_lives(), streak=1)
+        self.assertEqual(known, unknown)
+
+    def test_returns_int(self):
+        score = calculate_score("hard", self._full_lives(), streak=3)
+        self.assertIsInstance(score, int)
+
+
 class LyricsGuessFormTests(TestCase):
     def test_valid_guess(self):
         form = LyricsGuessForm(data={"guess": "hello"})
@@ -143,6 +186,8 @@ class LobbyViewTests(TestCase):
         self.assertEqual(session["current_round"], 1)
         self.assertEqual(session["game_status"], "playing")
         self.assertEqual(session["lives"], {"1": True, "2": True, "3": True})
+        self.assertEqual(session["score"], 0)
+        self.assertEqual(session["streak"], 0)
 
     def test_post_invalid_rounds_defaults_to_five(self):
         response = self.client.post(self.url, {
@@ -164,7 +209,7 @@ class GameViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertRedirects(response, reverse("game:lobby"))
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_get_with_session_fetches_music_and_renders(self, MockService):
         MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
         _playing_session(self.client)
@@ -174,7 +219,7 @@ class GameViewTests(TestCase):
         self.assertTemplateUsed(response, "game/game.html")
         self.assertEqual(response.context["music"], FAKE_MUSIC)
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_get_skips_api_call_when_music_already_in_session(self, MockService):
         _playing_session(self.client, music=FAKE_MUSIC)
 
@@ -182,7 +227,7 @@ class GameViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         MockService.return_value.generate_round_data.assert_not_called()
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_correct_guess_marks_answered_and_increments_count(self, MockService):
         MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
         _playing_session(self.client, music=FAKE_MUSIC)
@@ -193,8 +238,11 @@ class GameViewTests(TestCase):
         self.assertTrue(session["answered"])
         self.assertEqual(session["correct_count"], 1)
         self.assertTrue(session["round_summary"][0]["correct"])
+        self.assertIn("round_score", session["round_summary"][0])
+        self.assertGreater(session["score"], 0)
+        self.assertEqual(session["streak"], 1)
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_fuzzy_guess_accepted(self, MockService):
         MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
         _playing_session(self.client, music=FAKE_MUSIC)
@@ -204,20 +252,21 @@ class GameViewTests(TestCase):
         self.assertTrue(self.client.session["answered"])
         self.assertEqual(self.client.session["correct_count"], 1)
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_wrong_guess_removes_a_life(self, MockService):
         instance = MockService.return_value
         instance.generate_round_data.return_value = FAKE_MUSIC
         instance.remove_live.return_value = (
             {"1": True, "2": True, "3": False}, False
         )
-        _playing_session(self.client, music=FAKE_MUSIC)
+        _playing_session(self.client, music=FAKE_MUSIC, streak=3)
 
         response = self.client.post(self.url, {"guess": "completely_wrong"})
         self.assertEqual(response.status_code, 200)
         instance.remove_live.assert_called_once()
+        self.assertEqual(self.client.session["streak"], 0)
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_third_wrong_guess_redirects_to_game_over(self, MockService):
         instance = MockService.return_value
         instance.generate_round_data.return_value = FAKE_MUSIC
@@ -234,7 +283,7 @@ class GameViewTests(TestCase):
         response = self.client.post(self.url, {"guess": "wrong"})
         self.assertIn(response.status_code, [200, 302])
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_action_next_advances_round(self, MockService):
         MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
         _playing_session(self.client, music=FAKE_MUSIC, answered=True, current_round=2)
@@ -250,7 +299,7 @@ class GameViewTests(TestCase):
         self.assertIsNone(session["music"])
         self.assertFalse(session["answered"])
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_action_quit_resets_status_and_redirects(self, MockService):
         MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
         _playing_session(self.client, music=FAKE_MUSIC)
@@ -259,7 +308,7 @@ class GameViewTests(TestCase):
         self.assertRedirects(response, reverse("game:lobby"))
         self.assertEqual(self.client.session["game_status"], "lobby")
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_all_rounds_complete_redirects_to_victory(self, MockService):
         MockService.return_value.generate_round_data.return_value = FAKE_MUSIC
         _playing_session(self.client, music=FAKE_MUSIC, current_round=6, total_rounds=5)
@@ -268,7 +317,7 @@ class GameViewTests(TestCase):
         self.assertRedirects(response, reverse("game:victory"))
         self.assertEqual(self.client.session["game_status"], "won")
 
-    @patch("game.views.GameService")
+    @patch("apps.game.views.GameService")
     def test_api_failure_redirects_to_lobby_with_error(self, MockService):
         MockService.return_value.generate_round_data.return_value = None
         _playing_session(self.client)
@@ -293,6 +342,7 @@ class VictoryViewTests(TestCase):
         session["game_status"] = "won"
         session["total_rounds"] = 5
         session["correct_count"] = 4
+        session["score"] = 850
         session["lives"] = {"1": True, "2": True, "3": False}
         session["round_summary"] = []
         session["difficulty"] = "medium"
@@ -305,6 +355,7 @@ class VictoryViewTests(TestCase):
         self.assertEqual(response.context["correct_count"], 4)
         self.assertEqual(response.context["lives_remaining"], 2)
         self.assertEqual(response.context["game_artist"], "Radiohead")
+        self.assertEqual(response.context["score"], 850)
 
 
 @override_settings(STORAGES=_SIMPLE_STORAGE)
@@ -323,6 +374,7 @@ class GameOverViewTests(TestCase):
         session["total_rounds"] = 5
         session["current_round"] = 3
         session["correct_count"] = 1
+        session["score"] = 217
         session["lives"] = {"1": False, "2": False, "3": False}
         session["round_summary"] = []
         session["difficulty"] = "hard"
@@ -335,3 +387,4 @@ class GameOverViewTests(TestCase):
         self.assertEqual(response.context["correct_count"], 1)
         self.assertEqual(response.context["lives_lost"], 3)
         self.assertEqual(response.context["game_artist"], "Pink Floyd")
+        self.assertEqual(response.context["score"], 217)

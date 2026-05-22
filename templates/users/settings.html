@@ -1,8 +1,229 @@
 {% extends "base.html" %}
-{% load static %}
+{% load widget_tweaks %}
 
-{% block title %}Settings{% endblock %}
+{% block title %}Account Settings{% endblock %}
 
 {% block content %}
-<h1>Settings</h1>
+<div class="max-w-3xl mx-auto px-6 py-16">
+
+    <div class="mb-12 flex flex-col gap-2">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'users:profile' %}"
+                class="text-base-content/30 hover:text-primary transition-colors text-sm font-bold">
+                ← {{ user.username }}
+            </a>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none uppercase">
+            Account <span class="text-primary">Settings</span>
+        </h1>
+        <p class="text-base-content/50 text-sm">Manage your profile, credentials, and preferences.</p>
+    </div>
+
+    {% if messages %}
+    <div class="flex flex-col gap-2 mb-8">
+        {% for message in messages %}
+        <div
+            class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %} shadow-sm rounded-2xl">
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="flex flex-col gap-6">
+
+        <div class="card bg-base-200 border border-base-300 shadow-sm rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-base-300 flex items-center gap-3">
+                <div class="h-5 w-1.5 rounded-full bg-primary"></div>
+                <h2 class="font-black text-base uppercase tracking-tight">Profile</h2>
+            </div>
+            <div class="card-body p-6 sm:p-8 gap-6">
+                <form method="POST" action="{% url 'users:settings' %}" class="flex flex-col gap-5">
+                    {% csrf_token %}
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="form-control gap-2">
+                            <label class="label pb-1">
+                                <span class="label-text font-semibold text-base">Username</span>
+                            </label>
+                            {% render_field username_form.username class="input input-bordered w-full focus:input-primary" %}
+                            {% if username_form.username.errors %}
+                            <p class="text-error text-xs">{{ username_form.username.errors|first }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-control gap-2">
+                            <label class="label pb-1">
+                                <span class="label-text font-semibold text-base">Email Address</span>
+                            </label>
+                            {% render_field email_form.email class="input input-bordered w-full focus:input-primary" %}
+                            {% if email_form.email.errors %}
+                            <p class="text-error text-xs">{{ email_form.email.errors|first }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit"
+                            class="btn btn-primary uppercase font-black tracking-wide rounded-xl px-8">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300 shadow-sm rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-base-300 flex items-center gap-3">
+                <div class="h-5 w-1.5 rounded-full bg-secondary"></div>
+                <h2 class="font-black text-base uppercase tracking-tight">Change Password</h2>
+            </div>
+            <div class="card-body p-6 sm:p-8 gap-6">
+                <form method="POST" action="{% url 'account_change_password' %}" class="flex flex-col gap-5">
+                    {% csrf_token %}
+
+                    <div class="form-control gap-2">
+                        <label class="label pb-1">
+                            <span class="label-text font-semibold text-base">Current Password</span>
+                        </label>
+                        {% render_field password_form.oldpassword class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="current-password" %}
+                        {% if password_form.oldpassword.errors %}
+                        <p class="text-error text-xs">{{ password_form.oldpassword.errors|first }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="form-control gap-2">
+                            <label class="label pb-1">
+                                <span class="label-text font-semibold text-base">New Password</span>
+                            </label>
+                            {% render_field password_form.password1 class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="new-password" %}
+                            {% if password_form.password1.errors %}
+                            <p class="text-error text-xs">{{ password_form.password1.errors|first }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="form-control gap-2">
+                            <label class="label pb-1">
+                                <span class="label-text font-semibold text-base">Confirm New Password</span>
+                            </label>
+                            {% render_field password_form.password2 class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="new-password" %}
+                            {% if password_form.password2.errors %}
+                            <p class="text-error text-xs">{{ password_form.password2.errors|first }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit"
+                            class="btn btn-secondary uppercase font-black tracking-wide rounded-xl px-8">
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300 shadow-sm rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-base-300 flex items-center gap-3">
+                <div class="h-5 w-1.5 rounded-full bg-accent"></div>
+                <h2 class="font-black text-base uppercase tracking-tight">Preferences</h2>
+            </div>
+            <div class="card-body p-6 sm:p-8 gap-0">
+                <form method="POST" action="{% url 'users:settings' %}" class="flex flex-col">
+
+                    {% csrf_token %}
+
+                    <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
+                        <div>
+                            <p class="font-semibold text-sm">Show on leaderboard</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">Make your scores visible to other players</p>
+                        </div>
+                        <input type="checkbox" name="show_on_leaderboard" class="toggle toggle-primary shrink-0"
+                            {% if user.profile.show_on_leaderboard %}checked{% endif %} />
+                    </div>
+
+                    <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
+                        <div>
+                            <p class="font-semibold text-sm">Strict matching</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">Require exact song title — no fuzzy matching
+                            </p>
+                        </div>
+                        <input type="checkbox" name="strict_matching" class="toggle toggle-secondary shrink-0"
+                            {% if user.profile.strict_matching %}checked{% endif %} />
+                    </div>
+
+                    <div class="flex items-center justify-between py-4 gap-6">
+                        <div>
+                            <p class="font-semibold text-sm">Email notifications</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">Receive a weekly score digest</p>
+                        </div>
+                        <input type="checkbox" name="email_notifications" class="toggle toggle-accent shrink-0"
+                            {% if user.profile.email_notifications %}checked{% endif %} />
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-base-300 mt-2">
+                        <button type="submit" class="btn btn-accent uppercase font-black tracking-wide rounded-xl px-8">
+                            Save Preferences
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <div class="card bg-base-200 border border-error/30 shadow-sm rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-error/20 flex items-center gap-3">
+                <div class="h-5 w-1.5 rounded-full bg-error"></div>
+                <h2 class="font-black text-base uppercase tracking-tight text-error">Danger Zone</h2>
+            </div>
+            <div class="card-body p-6 sm:p-8 gap-4">
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
+                    <div>
+                        <p class="font-semibold text-sm">Delete account</p>
+                        <p class="text-xs text-base-content/40 mt-0.5">
+                            Permanently wipe your profile, scores, and all associated data. This cannot be undone.
+                        </p>
+                    </div>
+                    <button onclick="delete_modal.showModal()"
+                        class="btn btn-error btn-outline uppercase font-black tracking-wide rounded-xl shrink-0">
+                        Delete Account
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<dialog id="delete_modal" class="modal">
+    <div class="modal-box bg-base-200 border border-base-300 rounded-2xl shadow-xl max-w-sm">
+        <h3 class="font-black text-xl uppercase tracking-tight text-error mb-2">Are you sure?</h3>
+        <p class="text-base-content/60 text-sm leading-relaxed mb-6">
+            This will permanently delete your account, all your scores, and every piece of data linked to
+            <span class="font-bold text-base-content">{{ user.username }}</span>.
+            There is no going back.
+        </p>
+        <div class="flex flex-col gap-3">
+            <form method="POST" action="#">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-error btn-block uppercase font-black tracking-wide rounded-xl">
+                    Yes, delete everything
+                </button>
+            </form>
+            <form method="dialog">
+                <button
+                    class="btn btn-ghost btn-block border border-base-300 uppercase font-black tracking-wide rounded-xl">
+                    Cancel
+                </button>
+            </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
 {% endblock %}
