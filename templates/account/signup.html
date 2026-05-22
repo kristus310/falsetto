@@ -1,7 +1,98 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Create Account{% endblock %}
 
 {% block content %}
-<h1>Register</h1>
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-16">
+    <div class="w-full max-w-md flex flex-col gap-8">
+
+        <div class="text-center flex flex-col gap-3">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none uppercase">
+                Join <span class="text-secondary">Falsetto</span>
+            </h1>
+            <p class="text-base-content/50 text-sm">
+                Create an account to save scores and compete on the leaderboard.
+            </p>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300 shadow-xl">
+            <div class="card-body gap-5">
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-error rounded-xl shadow-sm">
+                    <span>{{ form.non_field_errors|first }}</span>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'account_signup' %}" class="flex flex-col gap-5">
+                    {% csrf_token %}
+
+                    <div class="form-control gap-2">
+                        <label class="label pb-1">
+                            <span class="label-text font-semibold text-base">Username</span>
+                        </label>
+                        {% render_field form.username class="input input-bordered w-full focus:input-primary" placeholder="johndoe" autocomplete="username" %}
+                        {% if form.username.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.username.errors|first }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-control gap-2">
+                        <label class="label pb-1">
+                            <span class="label-text font-semibold text-base">Email Address</span>
+                        </label>
+                        {% render_field form.email class="input input-bordered w-full focus:input-primary" placeholder="john@example.com" autocomplete="email" %}
+                        {% if form.email.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.email.errors|first }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-control gap-2">
+                        <label class="label pb-1">
+                            <span class="label-text font-semibold text-base">Password</span>
+                        </label>
+                        {% render_field form.password1 class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="new-password" %}
+                        {% if form.password1.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.password1.errors|first }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-control gap-2">
+                        <label class="label pb-1">
+                            <span class="label-text font-semibold text-base">Confirm Password</span>
+                        </label>
+                        {% render_field form.password2 class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="new-password" %}
+                        {% if form.password2.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.password2.errors|first }}</p>
+                        {% endif %}
+                    </div>
+
+                    {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                    {% endif %}
+
+                    <p class="text-xs text-base-content/40 -mt-1">
+                        By signing up, you agree to our
+                        <a href="{% url 'pages:legal' %}" class="link link-primary font-medium">Terms & Privacy
+                            Policy</a>.
+                        No tracking, no nonsense.
+                    </p>
+
+                    <button type="submit"
+                        class="btn btn-secondary btn-lg w-full uppercase font-black tracking-wide rounded-xl mt-1">
+                        Create Account
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-base-content/40">
+            Already have an account?
+            <a href="{% url 'account_login' %}" class="link link-primary font-bold">Log in</a>
+        </p>
+
+    </div>
+</div>
 {% endblock %}

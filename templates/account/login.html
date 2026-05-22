@@ -1,7 +1,80 @@
 {% extends "base.html" %}
+{% load widget_tweaks %}
 
-{% block title %}Log in{% endblock %}
+{% block title %}Log In{% endblock %}
 
 {% block content %}
-<h1>Log in</h1>
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-16">
+    <div class="w-full max-w-md flex flex-col gap-8">
+
+        <div class="text-center flex flex-col gap-3">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none uppercase">
+                Welcome <span class="text-primary">back</span>
+            </h1>
+            <p class="text-base-content/50 text-sm">
+                Log in to track your scores and climb the leaderboard.
+            </p>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300 shadow-xl">
+            <div class="card-body gap-5">
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-error rounded-xl shadow-sm">
+                    <span>{{ form.non_field_errors|first }}</span>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'account_login' %}" class="flex flex-col gap-5">
+                    {% csrf_token %}
+
+                    <div class="form-control gap-2">
+                        <label class="label pb-1">
+                            <span class="label-text font-semibold text-base">Username or Email</span>
+                        </label>
+                        {% render_field form.login class="input input-bordered w-full focus:input-primary" placeholder="john@example.com" autocomplete="email" %}
+                        {% if form.login.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.login.errors|first }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-control gap-2">
+                        <label class="label pb-1 flex justify-between">
+                            <span class="label-text font-semibold text-base">Password</span>
+                            <a href="{% url 'account_reset_password' %}"
+                                class="label-text-alt link link-primary text-xs font-bold">Forgot password?</a>
+                        </label>
+                        {% render_field form.password class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="current-password" %}
+                        {% if form.password.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.password.errors|first }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-3 py-1">
+                            {% render_field form.remember class="checkbox checkbox-primary checkbox-sm" %}
+                            <span class="label-text text-base-content/60 text-sm">Remember me</span>
+                        </label>
+                    </div>
+
+                    {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                    {% endif %}
+
+                    <button type="submit"
+                        class="btn btn-primary btn-lg w-full uppercase font-black tracking-wide rounded-xl mt-1">
+                        Log In
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-base-content/40">
+            Don't have an account?
+            <a href="{% url 'account_signup' %}" class="link link-primary font-bold">Sign up for free</a>
+        </p>
+
+    </div>
+</div>
 {% endblock %}
