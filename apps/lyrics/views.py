@@ -1,15 +1,15 @@
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse
 from django.http import JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
 from .services import LastFMAPI, LRCLIBAPI
 
+@staff_member_required
 def fetch(request: HttpRequest, artist_slug: str, difficulty_slug: str) -> HttpResponse:
     artist = artist_slug
     difficulty = difficulty_slug
     lastFM = LastFMAPI()
     lrclib = LRCLIBAPI()
-
-    list = []
 
     try:
         track = lastFM.get_track(artist, difficulty)

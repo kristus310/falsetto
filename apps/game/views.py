@@ -67,10 +67,6 @@ def game(request: HttpRequest) -> HttpResponse:
             return redirect("game:lobby")
 
         elif action == "next" and answered:
-            if current_round >= total_rounds:
-                request.session["game_status"] = "won"
-                return redirect("game:victory")
-
             request.session["current_round"] = current_round + 1
             request.session["music"] = None
             request.session["answered"] = False

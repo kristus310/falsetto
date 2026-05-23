@@ -1,6 +1,5 @@
 import environ
 import os
-import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -249,4 +248,4 @@ LOGGING = {
 
 # LASTFM
 LASTFM_API_KEY = env("LASTFM_API_KEY")
-LASTFM_BASE_URL = "http://ws.audioscrobbler.com/2.0/"
+LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"

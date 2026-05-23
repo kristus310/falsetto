@@ -21,7 +21,7 @@ class LastFMAPI:
     _PAGE_LIMIT: Final[int] = 500
     _MAX_PAGES: Final[int] = 3
 
-    DIFFICULTIES: Final[Set[str]] = {"easy", "medium", "hard"}
+    DIFFICULTIES: Final[Set[str]] = {"easy", "medium", "hard", "insane"}
 
     def __init__(self):
         self.api_key = settings.LASTFM_API_KEY
@@ -119,6 +119,13 @@ class LastFMAPI:
                 pool = tracks[max(0, mid - half): mid + half + 1]
             weights = [math.sqrt(t["playcount"]) for t in pool]
             return random.choices(pool, weights=weights, k=1)[0]
+
+        elif difficulty == "insane":
+            start = math.ceil(count * 0.75)
+            pool = tracks[start:]
+            if len(pool) < MIN_POOL:
+                pool = tracks[-MIN_POOL:]
+            return random.choice(pool)
 
         else:
             start = math.ceil(count * 0.55)
@@ -440,4 +447,5 @@ class LRCLIBAPI:
             if artist_norm in item_artist:
                 return self._parse_result(item)
 
+        logger.warning("LRCLIB search fallback to first result for '%s' / '%s'", track_name, artist_name)
         return self._parse_result(data[0])

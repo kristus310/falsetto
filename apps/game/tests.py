@@ -1,6 +1,7 @@
 from unittest.mock import patch, MagicMock
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 
 _SIMPLE_STORAGE = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
@@ -8,6 +9,9 @@ _SIMPLE_STORAGE = {
 
 from apps.game.services import GameService, is_correct_guess, calculate_score
 from apps.game.forms import LyricsGuessForm
+from apps.users.models import UserScore
+
+User = get_user_model()
 
 FAKE_MUSIC = {
     "artist": "The Beatles",
@@ -33,6 +37,7 @@ def _playing_session(client: Client, *, artist="The Beatles", difficulty="medium
     session["round_summary"] = round_summary or []
     session["score"] = score
     session["streak"] = streak
+    session["score_saved"] = False
     session.save()
 
 
@@ -122,6 +127,10 @@ class CalculateScoreTests(TestCase):
         score = calculate_score("hard", self._full_lives(), streak=1)
         self.assertEqual(score, 362)
 
+    def test_insane_no_streak(self):
+        # (100 + 3×10 + 1×15) × 4.0 = 580
+        self.assertEqual(calculate_score("insane", self._full_lives(), streak=1), 580)
+
     def test_streak_increases_score(self):
         s1 = calculate_score("medium", self._full_lives(), streak=1)
         s5 = calculate_score("medium", self._full_lives(), streak=5)
@@ -164,6 +173,10 @@ class LobbyViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "game/lobby.html")
+
+    def test_rounds_clamped_to_20(self):
+        self.client.post(self.url, {"artist": "Blur", "difficulty": "easy", "rounds": "99"})
+        self.assertEqual(self.client.session["total_rounds"], 20)
 
     def test_post_no_artist_shows_error(self):
         response = self.client.post(self.url, {"artist": "", "difficulty": "easy", "rounds": 5})
@@ -275,13 +288,9 @@ class GameViewTests(TestCase):
         )
         _playing_session(self.client, music=FAKE_MUSIC,
                         lives={"1": True, "2": False, "3": False})
-
-        session = self.client.session
-        session["game_status"] = "lost"
-        session.save()
-
         response = self.client.post(self.url, {"guess": "wrong"})
-        self.assertIn(response.status_code, [200, 302])
+        self.assertRedirects(response, reverse("game:game_over"))
+        self.assertEqual(self.client.session["game_status"], "lost")
 
     @patch("apps.game.views.GameService")
     def test_action_next_advances_round(self, MockService):
@@ -388,3 +397,82 @@ class GameOverViewTests(TestCase):
         self.assertEqual(response.context["lives_lost"], 3)
         self.assertEqual(response.context["game_artist"], "Pink Floyd")
         self.assertEqual(response.context["score"], 217)
+
+@override_settings(STORAGES=_SIMPLE_STORAGE)
+class ScorePersistenceTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            email="test@example.com",
+            username="tester",
+            password="supersecretpass123",
+        )
+
+    def _won_session(self, authenticated=True):
+        if authenticated:
+            self.client.force_login(self.user)
+        s = self.client.session
+        s["game_status"] = "won"
+        s["game_artist"] = "Radiohead"
+        s["difficulty"] = "hard"
+        s["score"] = 500
+        s["correct_count"] = 5
+        s["total_rounds"] = 5
+        s["lives"] = {"1": True, "2": True, "3": True}
+        s["round_summary"] = []
+        s["score_saved"] = False
+        s.save()
+
+    def _lost_session(self, authenticated=True):
+        if authenticated:
+            self.client.force_login(self.user)
+        s = self.client.session
+        s["game_status"] = "lost"
+        s["game_artist"] = "Radiohead"
+        s["difficulty"] = "medium"
+        s["score"] = 217
+        s["correct_count"] = 2
+        s["total_rounds"] = 5
+        s["current_round"] = 3
+        s["lives"] = {"1": False, "2": False, "3": False}
+        s["round_summary"] = []
+        s["score_saved"] = False
+        s.save()
+
+    def test_victory_saves_score_for_authenticated_user(self):
+        self._won_session()
+        self.client.get(reverse("game:victory"))
+        self.assertEqual(UserScore.objects.filter(user=self.user).count(), 1)
+        obj = UserScore.objects.get(user=self.user)
+        self.assertEqual(obj.score, 500)
+        self.assertTrue(obj.completed)
+
+    def test_victory_no_save_for_anonymous_user(self):
+        self._won_session(authenticated=False)
+        self.client.get(reverse("game:victory"))
+        self.assertEqual(UserScore.objects.count(), 0)
+
+    def test_victory_no_double_save_on_refresh(self):
+        self._won_session()
+        self.client.get(reverse("game:victory"))
+        self.client.get(reverse("game:victory"))
+        self.assertEqual(UserScore.objects.filter(user=self.user).count(), 1)
+
+    def test_game_over_saves_score_for_authenticated_user(self):
+        self._lost_session()
+        self.client.get(reverse("game:game_over"))
+        self.assertEqual(UserScore.objects.filter(user=self.user).count(), 1)
+        obj = UserScore.objects.get(user=self.user)
+        self.assertEqual(obj.score, 217)
+        self.assertFalse(obj.completed)
+
+    def test_game_over_no_save_for_anonymous_user(self):
+        self._lost_session(authenticated=False)
+        self.client.get(reverse("game:game_over"))
+        self.assertEqual(UserScore.objects.count(), 0)
+
+    def test_game_over_no_double_save_on_refresh(self):
+        self._lost_session()
+        self.client.get(reverse("game:game_over"))
+        self.client.get(reverse("game:game_over"))
+        self.assertEqual(UserScore.objects.filter(user=self.user).count(), 1)

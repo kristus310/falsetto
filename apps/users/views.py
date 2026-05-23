@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def profile(request: HttpRequest) -> HttpResponse:
-    recent_scores = request.user.scores.filter(completed=True).order_by("-score")[:5]
+    recent_scores = request.user.scores.order_by("-created_at")[:5]
     context = {
         "scores": recent_scores,
     }

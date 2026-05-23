@@ -30,7 +30,7 @@ class UserScore(models.Model):
         ("insane", "Insane"),
     ]
 
-    user = models.ForeignKey("users.User", on_delete=models.CASCADE, related_name="scores", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="scores", null=True, blank=True)
     artist = models.CharField(max_length=120)
     difficulty = models.CharField(max_length=12, choices=DIFFICULTIES, default="medium")
     score = models.PositiveIntegerField(default=0)
