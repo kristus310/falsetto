@@ -1,6 +1,8 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from .managers import UserManager
 
 class User(AbstractUser):
@@ -22,6 +24,20 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    show_on_leaderboard = models.BooleanField(default=True)
+    strict_matching = models.BooleanField(default=False)
+    email_notifications = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.user.email} — profile"
+
+
+@receiver(post_save, sender=User)
+def create_or_save_user_profile(sender, instance, created, **kwargs):
+    UserProfile.objects.get_or_create(user=instance)
+
 class UserScore(models.Model):
     DIFFICULTIES = [
         ("easy", "Easy"),
@@ -30,7 +46,9 @@ class UserScore(models.Model):
         ("insane", "Insane"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="scores", null=True, blank=True)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="scores", null=True, blank=True
+    )
     artist = models.CharField(max_length=120)
     difficulty = models.CharField(max_length=12, choices=DIFFICULTIES, default="medium")
     score = models.PositiveIntegerField(default=0)
@@ -49,6 +67,6 @@ class UserScore(models.Model):
 
     @property
     def accuracy(self) -> float:
-        if self.total_rounds == 0:
+        if not self.total_rounds:
             return 0.0
         return round(self.correct_count / self.total_rounds * 100, 1)

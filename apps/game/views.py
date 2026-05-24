@@ -1,13 +1,33 @@
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib import messages
+from django.db.models import Count
 from .forms import LyricsGuessForm
 from .services import GameService, is_correct_guess, calculate_score
 
 from apps.users.models import UserScore
 
 def index(request: HttpRequest) -> HttpResponse:
-    return render(request, "game/index.html")
+    most_played = "None yet!"
+    play_count = 0
+
+    if request.user.is_authenticated:
+        most_played_data = (
+            UserScore.objects.filter(user=request.user)
+            .values("artist")
+            .annotate(times_played=Count("artist"))
+            .order_by("-times_played")
+            .first()
+        )
+        if most_played_data:
+            most_played = most_played_data["artist"]
+            play_count = most_played_data["times_played"]
+
+    context = {
+        "most_played_artist": most_played,
+        "play_count": play_count,
+    }
+    return render(request, "game/index.html", context=context)
 
 def lobby(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":

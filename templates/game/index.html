@@ -88,8 +88,8 @@
                 </div>
             </div>
             <div class="stat-title">Your Go-To Artists</div>
-            <div class="stat-value">Muse</div>
-            <div class="stat-desc text-secondary">Played 5 times</div>
+            <div class="stat-value text-primary">{{ most_played_artist|capfirst  }}</div>
+            <div class="stat-desc">Times played: <span class="text-primary">{{ play_count }}</span></div>
         </div>
         {% else %}
         <div class="stat">

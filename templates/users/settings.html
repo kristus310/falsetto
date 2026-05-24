@@ -40,6 +40,7 @@
             <div class="card-body p-6 sm:p-8 gap-6">
                 <form method="POST" action="{% url 'users:settings' %}" class="flex flex-col gap-5">
                     {% csrf_token %}
+                    <input type="hidden" name="action" value="profile">
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div class="form-control gap-2">
@@ -78,48 +79,15 @@
                 <div class="h-5 w-1.5 rounded-full bg-secondary"></div>
                 <h2 class="font-black text-base uppercase tracking-tight">Change Password</h2>
             </div>
-            <div class="card-body p-6 sm:p-8 gap-6">
-                <form method="POST" action="{% url 'account_change_password' %}" class="flex flex-col gap-5">
-                    {% csrf_token %}
-
-                    <div class="form-control gap-2">
-                        <label class="label pb-1">
-                            <span class="label-text font-semibold text-base">Current Password</span>
-                        </label>
-                        {% render_field password_form.oldpassword class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="current-password" %}
-                        {% if password_form.oldpassword.errors %}
-                        <p class="text-error text-xs">{{ password_form.oldpassword.errors|first }}</p>
-                        {% endif %}
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div class="form-control gap-2">
-                            <label class="label pb-1">
-                                <span class="label-text font-semibold text-base">New Password</span>
-                            </label>
-                            {% render_field password_form.password1 class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="new-password" %}
-                            {% if password_form.password1.errors %}
-                            <p class="text-error text-xs">{{ password_form.password1.errors|first }}</p>
-                            {% endif %}
-                        </div>
-                        <div class="form-control gap-2">
-                            <label class="label pb-1">
-                                <span class="label-text font-semibold text-base">Confirm New Password</span>
-                            </label>
-                            {% render_field password_form.password2 class="input input-bordered w-full focus:input-primary" placeholder="••••••••" autocomplete="new-password" %}
-                            {% if password_form.password2.errors %}
-                            <p class="text-error text-xs">{{ password_form.password2.errors|first }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end">
-                        <button type="submit"
-                            class="btn btn-secondary uppercase font-black tracking-wide rounded-xl px-8">
-                            Update Password
-                        </button>
-                    </div>
-                </form>
+            <div class="card-body p-6 sm:p-8">
+                <p class="text-sm text-base-content/50 mb-4">You'll be taken to a secure page to update your password.
+                </p>
+                <div class="flex justify-end">
+                    <a href="{% url 'account_change_password' %}"
+                        class="btn btn-secondary uppercase font-black tracking-wide rounded-xl px-8">
+                        Change Password →
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -130,8 +98,8 @@
             </div>
             <div class="card-body p-6 sm:p-8 gap-0">
                 <form method="POST" action="{% url 'users:settings' %}" class="flex flex-col">
-
                     {% csrf_token %}
+                    <input type="hidden" name="action" value="preferences">
 
                     <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
                         <div>
@@ -166,7 +134,6 @@
                             Save Preferences
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>
@@ -177,7 +144,6 @@
                 <h2 class="font-black text-base uppercase tracking-tight text-error">Danger Zone</h2>
             </div>
             <div class="card-body p-6 sm:p-8 gap-4">
-
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
                     <div>
                         <p class="font-semibold text-sm">Delete account</p>
@@ -190,7 +156,6 @@
                         Delete Account
                     </button>
                 </div>
-
             </div>
         </div>
 
@@ -204,22 +169,29 @@
         <p class="text-base-content/60 text-sm leading-relaxed mb-6">
             This will permanently delete your account, all your scores, and every piece of data linked to
             <span class="font-bold text-base-content">{{ user.username }}</span>.
-            There is no going back.
+            There is no going back. Enter your password to confirm.
         </p>
-        <div class="flex flex-col gap-3">
-            <form method="POST" action="#">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-error btn-block uppercase font-black tracking-wide rounded-xl">
-                    Yes, delete everything
-                </button>
-            </form>
-            <form method="dialog">
-                <button
-                    class="btn btn-ghost btn-block border border-base-300 uppercase font-black tracking-wide rounded-xl">
-                    Cancel
-                </button>
-            </form>
-        </div>
+        <form method="POST" action="{% url 'users:delete_account' %}" class="flex flex-col gap-4">
+            {% csrf_token %}
+            <div class="form-control gap-2">
+                <label class="label pb-1">
+                    <span class="label-text font-semibold text-sm">Password</span>
+                </label>
+                {% render_field delete_form.password class="input input-bordered input-error w-full focus:input-error" placeholder="••••••••" autocomplete="current-password" %}
+                {% if delete_form.password.errors %}
+                <p class="text-error text-xs">{{ delete_form.password.errors|first }}</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-error btn-block uppercase font-black tracking-wide rounded-xl">
+                Yes, delete everything
+            </button>
+        </form>
+        <form method="dialog" class="mt-3">
+            <button
+                class="btn btn-ghost btn-block border border-base-300 uppercase font-black tracking-wide rounded-xl">
+                Cancel
+            </button>
+        </form>
     </div>
     <form method="dialog" class="modal-backdrop">
         <button>close</button>

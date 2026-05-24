@@ -1,15 +1,119 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+from django.contrib import messages
+from django.db.models import Sum, Max, Count
+from django.views.decorators.http import require_http_methods
+
+from .forms import UsernameForm, EmailForm, DeleteAccountForm
+from .models import UserProfile
+
+def _compute_win_streak(scores_qs):
+    games = list(scores_qs.order_by("-created_at").values_list("completed", flat=True))
+    current = 0
+    for completed in games:
+        if completed:
+            current += 1
+        else:
+            break
+
+    best = 0
+    running = 0
+    for completed in reversed(games):
+        if completed:
+            running += 1
+            best = max(best, running)
+        else:
+            running = 0
+
+    return current, best
 
 @login_required
 def profile(request: HttpRequest) -> HttpResponse:
-    recent_scores = request.user.scores.order_by("-created_at")[:5]
+    user = request.user
+    scores_qs = user.scores.all()
+    recent_scores = scores_qs.order_by("-created_at")[:5]
+
+    aggregates = scores_qs.aggregate(
+        total_games=Count("id"),
+        total_correct=Sum("correct_count"),
+        total_rounds=Sum("total_rounds"),
+        best_score=Max("score"),
+    )
+
+    total_correct = aggregates["total_correct"] or 0
+    total_rounds = aggregates["total_rounds"] or 0
+    accuracy = round(total_correct / total_rounds * 100) if total_rounds else 0
+
+    best_score_obj = scores_qs.order_by("-score").first()
+    best_score_difficulty = (
+        f"pts — {best_score_obj.get_difficulty_display()}" if best_score_obj else None
+    )
+
+    win_streak, best_streak = _compute_win_streak(scores_qs)
+
     context = {
         "scores": recent_scores,
+        "total_games": aggregates["total_games"] or 0,
+        "total_correct": total_correct,
+        "accuracy": accuracy,
+        "best_score": aggregates["best_score"] or 0,
+        "best_score_difficulty": best_score_difficulty,
+        "win_streak": win_streak,
+        "best_streak": best_streak,
     }
     return render(request, "users/profile.html", context)
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def settings(request: HttpRequest) -> HttpResponse:
-    return render(request, "users/settings.html")
+    user = request.user
+    user_profile, _ = UserProfile.objects.get_or_create(user=user)
+
+    username_form = UsernameForm(instance=user)
+    email_form = EmailForm(instance=user)
+    delete_form = DeleteAccountForm(user=user)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "profile":
+            username_form = UsernameForm(request.POST, instance=user)
+            email_form = EmailForm(request.POST, instance=user)
+            if username_form.is_valid() and email_form.is_valid():
+                username_form.save()
+                email_form.save()
+                messages.success(request, "Profile updated successfully.")
+                return redirect("users:settings")
+            messages.error(request, "Please fix the errors below.")
+
+        elif action == "preferences":
+            user_profile.show_on_leaderboard = "show_on_leaderboard" in request.POST
+            user_profile.strict_matching = "strict_matching" in request.POST
+            user_profile.email_notifications = "email_notifications" in request.POST
+            user_profile.save(update_fields=[
+                "show_on_leaderboard", "strict_matching", "email_notifications"
+            ])
+            messages.success(request, "Preferences saved.")
+            return redirect("users:settings")
+
+    context = {
+        "username_form": username_form,
+        "email_form": email_form,
+        "delete_form": delete_form,
+    }
+    return render(request, "users/settings.html", context)
+
+@login_required
+@require_http_methods(["POST"])
+def delete_account(request: HttpRequest) -> HttpResponse:
+    user = request.user
+    form = DeleteAccountForm(request.POST, user=user)
+    if form.is_valid():
+        logout(request)
+        user.delete()
+        messages.success(request, "Your account has been permanently deleted.")
+        return redirect("account_login")
+    messages.error(request, "Incorrect password. Account was not deleted.")
+    return redirect("users:settings")
