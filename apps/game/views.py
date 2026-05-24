@@ -7,6 +7,8 @@ from .services import GameService, is_correct_guess, calculate_score
 
 from apps.users.models import UserScore
 
+_VALID_DIFFICULTIES = {"easy", "medium", "hard", "insane"}
+
 def index(request: HttpRequest) -> HttpResponse:
     most_played = "None yet!"
     play_count = 0
@@ -31,8 +33,12 @@ def index(request: HttpRequest) -> HttpResponse:
 
 def lobby(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
-        artist = request.POST.get("artist", "").strip()
+        artist = request.POST.get("artist", "").strip().title()
+
         difficulty = request.POST.get("difficulty", "medium")
+        if difficulty not in _VALID_DIFFICULTIES:
+            difficulty = "medium"
+
         try:
             total_rounds = int(request.POST.get("rounds", 5))
             total_rounds = max(1, min(total_rounds, 20))
@@ -61,7 +67,6 @@ def lobby(request: HttpRequest) -> HttpResponse:
     return render(request, "game/lobby.html")
 
 def game(request: HttpRequest) -> HttpResponse:
-    game_service = GameService()
     artist = request.session.get("game_artist")
     status = request.session.get("game_status", "lobby")
 
@@ -80,7 +85,7 @@ def game(request: HttpRequest) -> HttpResponse:
         request.session["game_status"] = "won"
         return redirect("game:victory")
 
-    action = request.GET.get("action")
+    action = request.POST.get("action") or request.GET.get("action")
     if request.method == "POST" and action:
         if action == "quit":
             request.session["game_status"] = "lobby"
@@ -94,6 +99,7 @@ def game(request: HttpRequest) -> HttpResponse:
             return redirect("game:game")
 
     if not music:
+        game_service = GameService()
         attempts = 0
         while attempts < 3:
             music = game_service.generate_round_data(artist, difficulty)
@@ -141,6 +147,7 @@ def game(request: HttpRequest) -> HttpResponse:
                 request.session["round_summary"] = summary
                 request.session.modified = True
             else:
+                game_service = GameService()
                 request.session["streak"] = 0
                 lives, is_dead = game_service.remove_live(lives)
                 request.session["lives"] = lives

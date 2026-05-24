@@ -1,2 +1,1 @@
-from .api import LastFMAPI
-from .api import LRCLIBAPI
+from .api import LastFMAPI, LRCLIBAPI

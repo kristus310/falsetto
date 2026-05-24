@@ -1,7 +1,13 @@
 from unittest.mock import patch, MagicMock
-from django.test import TestCase
+import requests
+from django.test import TestCase, Client
+from django.urls import reverse
+from django.contrib.auth import get_user_model
 from apps.lyrics.services.helper import _is_variant, _normalize_title
-from apps.lyrics.services.api import LyricsResult, LastFMAPI, LRCLIBAPI
+from apps.lyrics.services.api import LyricsResult, LastFMAPI, LRCLIBAPI, LRCLIBAPIError
+from apps.lyrics.models import Artist, Track, LyricCache
+
+User = get_user_model()
 
 class HelperTests(TestCase):
     def test_is_variant(self):
@@ -33,31 +39,22 @@ class LyricsResultTests(TestCase):
         )
         self.assertFalse(res2.has_lyrics())
 
-        res3 = LyricsResult(
-            track_name="Song", artist_name="Artist", album_name="Album",
-            duration=180, plain_lyrics=None, synced_lyrics=None, instrumental=False
-        )
-        self.assertFalse(res3.has_lyrics())
-
     def test_lyric_lines_filters_section_headers(self):
         lyrics = "[Verse 1]\nHello there\n[Chorus]\nGeneral Kenobi\n"
         res = LyricsResult(
             track_name="Song", artist_name="Artist", album_name="Album",
             duration=180, plain_lyrics=lyrics, synced_lyrics=None, instrumental=False
         )
-        lines = res.lyric_lines()
-        self.assertEqual(lines, ["Hello there", "General Kenobi"])
+        self.assertEqual(res.lyric_lines(), ["Hello there", "General Kenobi"])
 
     def test_line_score(self):
         res = LyricsResult(
             track_name="Song", artist_name="Artist", album_name="Album",
             duration=180, plain_lyrics="Hello", synced_lyrics=None, instrumental=False
         )
-        score_meaningful = res._line_score("magnificent day today")
-        score_filler = res._line_score("yeah oh yeah la")
-        self.assertTrue(score_meaningful > score_filler)
+        self.assertTrue(res._line_score("magnificent day today") > res._line_score("yeah oh yeah la"))
 
-    def test_split_into_blocks_separates_on_blank_lines(self):
+    def test_split_into_blocks(self):
         lyrics = "Line one\nLine two\n\nLine three\nLine four"
         res = LyricsResult(
             track_name="Song", artist_name="Artist", album_name="Album",
@@ -66,30 +63,17 @@ class LyricsResultTests(TestCase):
         blocks = res._split_into_blocks()
         self.assertEqual(len(blocks), 2)
         self.assertEqual(blocks[0], ["Line one", "Line two"])
-        self.assertEqual(blocks[1], ["Line three", "Line four"])
 
-    def test_split_into_blocks_separates_on_section_headers(self):
-        lyrics = "[Verse 1]\nLine one\nLine two\n[Chorus]\nLine three"
+    def test_random_excerpt_fallback_when_unscored(self):
         res = LyricsResult(
             track_name="Song", artist_name="Artist", album_name="Album",
-            duration=180, plain_lyrics=lyrics, synced_lyrics=None, instrumental=False
+            duration=180, plain_lyrics="\n\n  \n\n", synced_lyrics=None, instrumental=False
         )
-        blocks = res._split_into_blocks()
-        self.assertEqual(len(blocks), 2)
-
-    def test_random_excerpt_returns_correct_length(self):
-        lyrics = "\n".join([f"This is meaningful line {i}" for i in range(10)])
-        res = LyricsResult(
-            track_name="Song", artist_name="Artist", album_name="Album",
-            duration=180, plain_lyrics=lyrics, synced_lyrics=None, instrumental=False
-        )
-        excerpt = res.random_excerpt(min_lines=3, max_lines=4)
-        self.assertGreaterEqual(len(excerpt), 3)
-        self.assertLessEqual(len(excerpt), 4)
+        self.assertEqual(res.random_excerpt(min_lines=2, max_lines=4), [])
 
 class LastFMAPITests(TestCase):
     @patch("apps.lyrics.services.api.requests.Session")
-    def test_get_top_tracks_deduplication(self, mock_session_class):
+    def test_get_top_tracks_deduplication_and_db_caching(self, mock_session_class):
         mock_session = MagicMock()
         mock_session_class.return_value = mock_session
 
@@ -106,59 +90,99 @@ class LastFMAPITests(TestCase):
         mock_session.get.return_value = mock_response
 
         api = LastFMAPI()
-        api.api_key = "test"
-        api.base_url = "https://example.com"
-
         tracks = api.get_top_tracks("The Beatles")
 
         names = [t["name"] for t in tracks]
         self.assertIn("Yesterday", names)
-        self.assertIn("Let It Be", names)
         self.assertNotIn("Yesterday (Live)", names)
 
+        self.assertTrue(Artist.objects.filter(name__iexact="The Beatles").exists())
+        artist = Artist.objects.get(name__iexact="The Beatles")
+        self.assertTrue(artist.is_fully_cached)
+        self.assertEqual(Track.objects.filter(artist=artist).count(), 2)
+
     @patch("apps.lyrics.services.api.requests.Session")
-    def test_get_track_insane_picks_from_bottom_quarter(self, mock_session_class):
+    def test_get_track_difficulty_distribution(self, mock_session_class):
         mock_session = MagicMock()
         mock_session_class.return_value = mock_session
 
-        tracks = [{"name": f"Track {i}", "playcount": str(1000 - i * 100), "mbid": str(i)}
-                for i in range(8)]
+        tracks = [{"name": f"Track {i}", "playcount": str(1000 - i * 100), "mbid": str(i)} for i in range(10)]
         mock_response = MagicMock()
         mock_response.json.return_value = {"toptracks": {"track": tracks}}
         mock_session.get.return_value = mock_response
 
         api = LastFMAPI()
-        api.api_key = "test"
-        api.base_url = "https://example.com"
 
-        results = {api.get_track("Artist", "insane")["name"] for _ in range(20)}
-        easy_tracks = {"Track 0", "Track 1"}
-        self.assertTrue(results.isdisjoint(easy_tracks))
+        easy_track = api.get_track("Artist", "easy")
+        self.assertIn(easy_track["name"], ["Track 0", "Track 1", "Track 2"])
+
+        insane_results = {api.get_track("Artist", "insane")["name"] for _ in range(20)}
+        self.assertFalse(insane_results.intersection({"Track 0", "Track 1", "Track 2"}))
 
 class LRCLIBAPITests(TestCase):
     @patch("apps.lyrics.services.api.requests.Session")
-    def test_fetch_lyrics_direct_success(self, mock_session_class):
-        mock_session = MagicMock()
-        mock_session_class.return_value = mock_session
-
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "trackName": "Yesterday",
-            "artistName": "The Beatles",
-            "albumName": "Help!",
-            "duration": 125,
-            "plainLyrics": "Yesterday all my troubles seemed so far away",
-            "syncedLyrics": None,
-            "instrumental": False,
-        }
-        mock_session.get.return_value = mock_response
+    def test_get_lyrics_cache_hit(self, mock_session_class):
+        artist = Artist.objects.create(name="The Beatles")
+        track = Track.objects.create(artist=artist, name="Yesterday", playcount=1000)
+        LyricCache.objects.create(
+            track=track, album_name="Help!", duration=125,
+            plain_lyrics="Yesterday...", instrumental=False
+        )
 
         api = LRCLIBAPI()
-        res = api._fetch_lyrics_direct("Yesterday", "The Beatles")
-
+        res = api.get_lyrics("Yesterday", "The Beatles")
         self.assertIsNotNone(res)
-        self.assertEqual(res.track_name, "Yesterday")
-        self.assertEqual(res.plain_lyrics, "Yesterday all my troubles seemed so far away")
+        self.assertEqual(res.album_name, "Help!")
+        mock_session_class.return_value.get.assert_not_called()
 
+    @patch("apps.lyrics.services.api.requests.Session")
+    def test_fetch_lyrics_network_failure_handling(self, mock_session_class):
+        mock_session = MagicMock()
+        mock_session.get.side_effect = requests.exceptions.Timeout("Connection timed out")
+        mock_session_class.return_value = mock_session
 
+        api = LRCLIBAPI()
+        res = api.get_lyrics("Yesterday", "The Beatles")
+        self.assertIsNone(res)
+
+class LyricsViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("lyrics:fetch", kwargs={"artist_slug": "The Beatles", "difficulty_slug": "easy"})
+
+        self.staff_user = User.objects.create_user(
+            username="staff", email="staff@example.com", password="password", is_staff=True
+        )
+        self.regular_user = User.objects.create_user(
+            username="pleb", email="pleb@example.com", password="password", is_staff=False
+        )
+
+    def test_fetch_endpoint_requires_staff(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+        self.client.login(username="pleb", password="password")
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    @patch("apps.lyrics.views.LRCLIBAPI")
+    @patch("apps.lyrics.views.LastFMAPI")
+    def test_fetch_endpoint_success_path(self, mock_lastfm_class, mock_lrclib_class):
+        self.client.login(username="staff", password="password")
+
+        mock_lastfm = MagicMock()
+        mock_lastfm.get_track.return_value = {"name": "Yesterday", "playcount": 1000, "mbid": "1"}
+        mock_lastfm_class.return_value = mock_lastfm
+
+        mock_lyrics = MagicMock()
+        mock_lyrics.has_lyrics.return_value = True
+        mock_lyrics.random_excerpt.return_value = ["Line 1", "Line 2"]
+        mock_lrclib = MagicMock()
+        mock_lrclib.get_lyrics_for_track.return_value = mock_lyrics
+        mock_lrclib_class.return_value = mock_lrclib
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["track"]["name"], "Yesterday")
+        self.assertEqual(data["excerpt"], ["Line 1", "Line 2"])

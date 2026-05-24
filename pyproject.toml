@@ -15,4 +15,5 @@ dependencies = [
     "pillow",
     "django-htmx",
     "requests>=2.33.1",
+    "resend>=2.30.1",
 ]
