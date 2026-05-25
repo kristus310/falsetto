@@ -76,6 +76,81 @@
 
         <div class="card bg-base-200 border border-base-300 shadow-sm rounded-2xl overflow-hidden">
             <div class="px-6 py-4 border-b border-base-300 flex items-center gap-3">
+                <div class="h-5 w-1.5 rounded-full bg-primary"></div>
+                <h2 class="font-black text-base uppercase tracking-tight">Avatar</h2>
+            </div>
+            <div class="card-body p-6 sm:p-8 gap-6">
+                <form method="POST" action="{% url 'users:settings' %}" enctype="multipart/form-data"
+                    class="flex flex-col gap-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="avatar">
+
+                    <div
+                        class="flex flex-col sm:flex-row items-center gap-6 bg-base-300/30 p-5 rounded-2xl border border-base-300/50">
+
+                        <div class="avatar shrink-0">
+                            <div
+                                class="w-32 h-32 rounded-full ring ring-primary ring-offset-base-200 ring-offset-4 shadow-md">
+                                <img src="{{ user.profile.avatar_url }}" alt="{{ user.username }}" />
+                            </div>
+                        </div>
+
+                        <div class="form-control gap-2 w-full">
+                            <label class="label p-0 pb-1">
+                                <span class="label-text font-semibold text-base">Upload new avatar</span>
+                            </label>
+                            {% render_field avatar_form.avatar class="file-input file-input-bordered file-input-primary w-full" %}
+                            {% if avatar_form.avatar.errors %}
+                            <p class="text-error text-xs">{{ avatar_form.avatar.errors|first }}</p>
+                            {% else %}
+                            <p class="text-base-content/40 text-xs p-2">JPEG, PNG or WebP · max 2 MB · max 2000×2000 px
+                            </p>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="flex {% if user.profile.avatar %}justify-between{% else %}justify-end{% endif %} items-center mt-2">
+                        {% if user.profile.avatar %}
+                        <button type="button" onclick="remove_avatar_modal.showModal()"
+                            class="btn btn-ghost border-error text-error uppercase font-black tracking-wide rounded-xl px-8">
+                            Remove avatar
+                        </button>
+                        {% endif %}
+                        <button type="submit"
+                            class="btn btn-primary uppercase font-black tracking-wide rounded-xl px-8">
+                            Save Avatar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <dialog id="remove_avatar_modal" class="modal">
+            <div class="modal-box bg-base-200 border border-base-300 rounded-2xl shadow-xl max-w-sm">
+                <h3 class="font-black text-xl uppercase tracking-tight text-error mb-2">Remove avatar?</h3>
+                <p class="text-base-content/60 text-sm leading-relaxed mb-6">
+                    Your avatar will be removed and replaced with the default image.
+                </p>
+                <form method="POST" action="{% url 'users:delete_avatar' %}" class="flex flex-col gap-3">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-error btn-block uppercase font-black tracking-wide rounded-xl">
+                        Yes, remove it
+                    </button>
+                </form>
+                <form method="dialog" class="mt-3">
+                    <button
+                        class="btn btn-ghost btn-block border border-base-300 uppercase font-black tracking-wide rounded-xl">
+                        Cancel
+                    </button>
+                </form>
+            </div>
+            <form method="dialog" class="modal-backdrop"><button>close</button></form>
+        </dialog>
+
+        <div class="card bg-base-200 border border-base-300 shadow-sm rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-base-300 flex items-center gap-3">
                 <div class="h-5 w-1.5 rounded-full bg-secondary"></div>
                 <h2 class="font-black text-base uppercase tracking-tight">Change Password</h2>
             </div>

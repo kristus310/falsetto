@@ -66,7 +66,6 @@ class UserProfileSignalTests(TestCase):
             username="idemuser",
             password="testpassword123",
         )
-        # Saving the user again should not create a second profile
         user.save()
         self.assertEqual(UserProfile.objects.filter(user=user).count(), 1)
 

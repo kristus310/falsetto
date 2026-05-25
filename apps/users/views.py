@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.db.models import Sum, Max, Count
 from django.views.decorators.http import require_http_methods
 
-from .forms import UsernameForm, EmailForm, DeleteAccountForm
+from .forms import UsernameForm, EmailForm, DeleteAccountForm, AvatarForm
 from .models import UserProfile
 
 def _compute_win_streak(scores_qs):
@@ -73,12 +73,28 @@ def settings(request: HttpRequest) -> HttpResponse:
 
     username_form = UsernameForm(instance=user)
     email_form = EmailForm(instance=user)
+    avatar_form = AvatarForm(instance=user_profile)
     delete_form = DeleteAccountForm(user=user)
 
     if request.method == "POST":
         action = request.POST.get("action")
 
-        if action == "profile":
+        if action == "avatar":
+            avatar_form = AvatarForm(request.POST, request.FILES, instance=user_profile)
+            if avatar_form.is_valid():
+                old_avatar = user_profile.avatar.name if user_profile.avatar else None
+                avatar_form.save()
+                if old_avatar:
+                    import os
+                    from django.conf import settings as django_settings
+                    old_path = django_settings.MEDIA_ROOT / old_avatar
+                    if old_path.is_file():
+                        os.remove(old_path)
+                messages.success(request, "Avatar updated.")
+                return redirect("users:settings")
+            else:
+                messages.error(request, avatar_form.errors["avatar"][0])
+        elif action == "profile":
             username_form = UsernameForm(request.POST, instance=user)
             email_form = EmailForm(request.POST, instance=user)
             if username_form.is_valid() and email_form.is_valid():
@@ -101,9 +117,17 @@ def settings(request: HttpRequest) -> HttpResponse:
     context = {
         "username_form": username_form,
         "email_form": email_form,
+        "avatar_form": avatar_form,
         "delete_form": delete_form,
     }
     return render(request, "users/settings.html", context)
+
+@login_required
+@require_http_methods(["POST"])
+def delete_avatar(request):
+    request.user.profile.delete_avatar()
+    messages.success(request, "Avatar removed.")
+    return redirect("users:settings")
 
 @login_required
 @require_http_methods(["POST"])

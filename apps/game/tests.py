@@ -482,16 +482,14 @@ class ProductionReadinessTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testplayer", email="player@test.com", password="password123")
         self.user_hidden = User.objects.create_user(username="ghostplayer", email="ghost@test.com", password="password123")
-        
-        # profile is auto-created by signals, let's update hidden user's profile
+
         profile = self.user_hidden.profile
         profile.show_on_leaderboard = False
         profile.save()
 
-        # Create scores
         UserScore.objects.create(user=self.user, artist="Muse", score=500, completed=True)
         UserScore.objects.create(user=self.user_hidden, artist="Muse", score=1000, completed=True)
-        UserScore.objects.create(user=self.user, artist="Radiohead", score=300, completed=False) # Not completed
+        UserScore.objects.create(user=self.user, artist="Radiohead", score=300, completed=False)
 
     def test_index_view_top_scores_in_context(self):
         response = self.client.get(reverse("game:index"))

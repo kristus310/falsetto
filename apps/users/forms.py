@@ -1,6 +1,7 @@
-from allauth.account.forms import SignupForm, ChangePasswordForm
+from allauth.account.forms import SignupForm
 from django import forms
-from .models import User
+from .models import User, UserProfile
+from .validators import validate_avatar
 
 class UserSignupForm(SignupForm):
     username = forms.CharField(
@@ -38,6 +39,20 @@ class EmailForm(forms.ModelForm):
         if qs.exists():
             raise forms.ValidationError("That email is already in use.")
         return email
+
+class AvatarForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ["avatar"]
+        widgets = {
+            "avatar": forms.FileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+        }
+
+    def clean_avatar(self):
+        f = self.cleaned_data.get("avatar")
+        if f:
+            validate_avatar(f)
+        return f
 
 class DeleteAccountForm(forms.Form):
     password = forms.CharField(

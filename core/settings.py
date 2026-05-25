@@ -202,11 +202,13 @@ TAILWIND_CLI_DIST_CSS = "css/output.css"
 # WhiteNoise
 
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
-
 
 # Email
 
@@ -249,3 +251,8 @@ LOGGING = {
 # LASTFM
 LASTFM_API_KEY = env("LASTFM_API_KEY", default=None)
 LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
+
+
+# AVATARS
+AVATAR_MAX_SIZE_MB = env.int("AVATAR_MAX_SIZE_MB", default=2)
+AVATAR_MAX_DIMENSIONS = env.int("AVATAR_MAX_DIMENSIONS", default=2000)
