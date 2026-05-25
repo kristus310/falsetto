@@ -220,7 +220,6 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="webmaster@localhost")
 
-
 # Logging
 
 LOGGING = {
@@ -247,6 +246,9 @@ LOGGING = {
         },
     },
 }
+
+# RESEND
+RESEND_API_KEY = env("RESEND_API_KEY", default=None)
 
 # LASTFM
 LASTFM_API_KEY = env("LASTFM_API_KEY", default=None)

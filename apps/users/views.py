@@ -80,20 +80,25 @@ def settings(request: HttpRequest) -> HttpResponse:
         action = request.POST.get("action")
 
         if action == "avatar":
-            avatar_form = AvatarForm(request.POST, request.FILES, instance=user_profile)
-            if avatar_form.is_valid():
-                old_avatar = user_profile.avatar.name if user_profile.avatar else None
-                avatar_form.save()
-                if old_avatar:
-                    import os
-                    from django.conf import settings as django_settings
-                    old_path = django_settings.MEDIA_ROOT / old_avatar
-                    if old_path.is_file():
-                        os.remove(old_path)
-                messages.success(request, "Avatar updated.")
-                return redirect("users:settings")
+            if "avatar" in request.FILES:
+                avatar_form = AvatarForm(request.POST, request.FILES, instance=user_profile)
+                if avatar_form.is_valid():
+                    old_avatar = user_profile.avatar.name if user_profile.avatar else None
+                    avatar_form.save()
+
+                    if old_avatar:
+                        import os
+                        from django.conf import settings as django_settings
+                        old_path = django_settings.MEDIA_ROOT / old_avatar
+                        if old_path.is_file():
+                            os.remove(old_path)
+
+                    messages.success(request, "Avatar updated successfully.")
+                    return redirect("users:settings")
+                else:
+                    messages.error(request, avatar_form.errors["avatar"][0])
             else:
-                messages.error(request, avatar_form.errors["avatar"][0])
+                messages.error(request, "Please pick an image file before clicking save.")
         elif action == "profile":
             username_form = UsernameForm(request.POST, instance=user)
             email_form = EmailForm(request.POST, instance=user)

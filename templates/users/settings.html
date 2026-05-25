@@ -91,7 +91,8 @@
                         <div class="avatar shrink-0">
                             <div
                                 class="w-32 h-32 rounded-full ring ring-primary ring-offset-base-200 ring-offset-4 shadow-md">
-                                <img src="{{ user.profile.avatar_url }}" alt="{{ user.username }}" />
+                                <img id="avatar-preview" src="{{ user.profile.avatar_url }}"
+                                    alt="{{ user.username }}" />
                             </div>
                         </div>
 
@@ -110,14 +111,21 @@
 
                     </div>
 
-                    <div
-                        class="flex {% if user.profile.avatar %}justify-between{% else %}justify-end{% endif %} items-center mt-2">
-                        {% if user.profile.avatar %}
-                        <button type="button" onclick="remove_avatar_modal.showModal()"
-                            class="btn btn-ghost border-error text-error uppercase font-black tracking-wide rounded-xl px-8">
-                            Remove avatar
-                        </button>
-                        {% endif %}
+                    <div class="flex justify-between items-center mt-2">
+                        <div>
+                            {% if user.profile.avatar %}
+                            <button id="remove-avatar-btn" type="button" onclick="remove_avatar_modal.showModal()"
+                                class="btn btn-ghost border-error text-error uppercase font-black tracking-wide rounded-xl px-8">
+                                Remove avatar
+                            </button>
+                            {% endif %}
+
+                            <button id="cancel-avatar-btn" type="button"
+                                class="btn btn-ghost border-error text-error uppercase font-black tracking-wide rounded-xl px-8 hidden">
+                                Cancel
+                            </button>
+                        </div>
+
                         <button type="submit"
                             class="btn btn-primary uppercase font-black tracking-wide rounded-xl px-8">
                             Save Avatar
@@ -272,5 +280,36 @@
         <button>close</button>
     </form>
 </dialog>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const fileInput = document.querySelector('input[type="file"][name="avatar"]');
+        const previewImg = document.getElementById('avatar-preview');
+        const cancelBtn = document.getElementById('cancel-avatar-btn');
+        const removeBtn = document.getElementById('remove-avatar-btn');
+
+        const originalUrl = "{{ user.profile.avatar_url }}";
+
+        if (!fileInput || !previewImg) return;
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            previewImg.src = URL.createObjectURL(file);
+
+            cancelBtn?.classList.remove('hidden');
+            removeBtn?.classList.add('hidden');
+        });
+
+        cancelBtn?.addEventListener('click', () => {
+            fileInput.value = "";
+            previewImg.src = originalUrl;
+
+            cancelBtn.classList.add('hidden');
+            removeBtn?.classList.remove('hidden');
+        });
+    });
+</script>
 
 {% endblock %}

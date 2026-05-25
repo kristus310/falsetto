@@ -1,8 +1,12 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.models.fields.files import FieldFile
 from PIL import Image, UnidentifiedImageError
 
 def validate_avatar(file):
+    if isinstance(file, FieldFile):
+        return
+
     max_mb = getattr(settings, "AVATAR_MAX_SIZE_MB", 2)
     if file.size > max_mb * 1024 * 1024:
         raise ValidationError(f"File too large. Maximum size is {max_mb} MB.")

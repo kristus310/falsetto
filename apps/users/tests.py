@@ -123,3 +123,154 @@ class SettingsViewTests(TestCase):
         response = self.client.get(reverse("users:settings"))
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login", response["Location"])
+
+
+from unittest.mock import patch, MagicMock
+from django.core.exceptions import ImproperlyConfigured
+from django.core.mail import EmailMessage, EmailMultiAlternatives
+from django.test import override_settings
+from core.email_backends import ResendEmailBackend
+from email.mime.base import MIMEBase
+
+class ResendEmailBackendTests(TestCase):
+    @override_settings(RESEND_API_KEY=None)
+    def test_backend_requires_api_key(self):
+        with self.assertRaises(ImproperlyConfigured) as context:
+            ResendEmailBackend()
+        self.assertIn("RESEND_API_KEY must be defined", str(context.exception))
+
+    @override_settings(RESEND_API_KEY="re_test_key_123")
+    @patch("resend.Emails.send")
+    def test_send_basic_email(self, mock_send):
+        mock_send.return_value = {"id": "email_id_123"}
+
+        email = EmailMessage(
+            subject="Test Subject",
+            body="Hello, this is a test.",
+            from_email="sender@example.com",
+            to=["receiver@example.com"],
+        )
+
+        backend = ResendEmailBackend()
+        sent_count = backend.send_messages([email])
+
+        self.assertEqual(sent_count, 1)
+        mock_send.assert_called_once_with({
+            "from": "sender@example.com",
+            "to": ["receiver@example.com"],
+            "subject": "Test Subject",
+            "text": "Hello, this is a test.",
+        })
+
+    @override_settings(RESEND_API_KEY="re_test_key_123")
+    @patch("resend.Emails.send")
+    def test_send_html_email(self, mock_send):
+        mock_send.return_value = {"id": "email_id_html"}
+
+        email = EmailMultiAlternatives(
+            subject="HTML Subject",
+            body="Text body",
+            from_email="sender@example.com",
+            to=["receiver@example.com"],
+        )
+        email.attach_alternative("<p>HTML body</p>", "text/html")
+
+        backend = ResendEmailBackend()
+        sent_count = backend.send_messages([email])
+
+        self.assertEqual(sent_count, 1)
+        mock_send.assert_called_once_with({
+            "from": "sender@example.com",
+            "to": ["receiver@example.com"],
+            "subject": "HTML Subject",
+            "text": "Text body",
+            "html": "<p>HTML body</p>",
+        })
+
+    @override_settings(RESEND_API_KEY="re_test_key_123")
+    @patch("resend.Emails.send")
+    def test_send_email_with_cc_bcc_reply_to(self, mock_send):
+        mock_send.return_value = {"id": "email_id_headers"}
+
+        email = EmailMessage(
+            subject="Subject",
+            body="Body",
+            from_email="sender@example.com",
+            to=["receiver@example.com"],
+            cc=["cc@example.com"],
+            bcc=["bcc@example.com"],
+            reply_to=["reply@example.com"],
+        )
+
+        backend = ResendEmailBackend()
+        sent_count = backend.send_messages([email])
+
+        self.assertEqual(sent_count, 1)
+        mock_send.assert_called_once_with({
+            "from": "sender@example.com",
+            "to": ["receiver@example.com"],
+            "cc": ["cc@example.com"],
+            "bcc": ["bcc@example.com"],
+            "reply_to": ["reply@example.com"],
+            "subject": "Subject",
+            "text": "Body",
+        })
+
+    @override_settings(RESEND_API_KEY="re_test_key_123")
+    @patch("resend.Emails.send")
+    def test_send_email_with_attachments(self, mock_send):
+        mock_send.return_value = {"id": "email_id_attachments"}
+
+        email = EmailMessage(
+            subject="Attachments",
+            body="Body",
+            from_email="sender@example.com",
+            to=["receiver@example.com"],
+        )
+
+        email.attach("test.txt", "Hello World File", "text/plain")
+
+        mime_attachment = MIMEBase("text", "plain")
+        mime_attachment.set_payload(b"Binary Content")
+        mime_attachment.add_header("Content-Disposition", "attachment", filename="mime.txt")
+        email.attach(mime_attachment)
+
+        backend = ResendEmailBackend()
+        sent_count = backend.send_messages([email])
+
+        self.assertEqual(sent_count, 1)
+
+        import base64
+        expected_txt_b64 = base64.b64encode(b"Hello World File").decode("utf-8")
+        expected_mime_b64 = base64.b64encode(b"Binary Content").decode("utf-8")
+
+        mock_send.assert_called_once_with({
+            "from": "sender@example.com",
+            "to": ["receiver@example.com"],
+            "subject": "Attachments",
+            "text": "Body",
+            "attachments": [
+                {"filename": "test.txt", "content": expected_txt_b64},
+                {"filename": "mime.txt", "content": expected_mime_b64},
+            ]
+        })
+
+    @override_settings(RESEND_API_KEY="re_test_key_123")
+    @patch("resend.Emails.send")
+    def test_fail_silently_behavior(self, mock_send):
+        mock_send.side_effect = Exception("API Connection failure")
+
+        email = EmailMessage(
+            subject="Fail Test",
+            body="Body",
+            from_email="sender@example.com",
+            to=["receiver@example.com"],
+        )
+
+        backend = ResendEmailBackend(fail_silently=False)
+        with self.assertRaises(Exception):
+            backend.send_messages([email])
+
+        backend_silent = ResendEmailBackend(fail_silently=True)
+        sent_count = backend_silent.send_messages([email])
+        self.assertEqual(sent_count, 0)

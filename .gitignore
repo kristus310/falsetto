@@ -73,3 +73,7 @@ docs/_build/
 # Tailwind
 .django_tailwind_cli/
 assets/css/output.css
+
+# Personal files for development
+todo.md
+deployment/
