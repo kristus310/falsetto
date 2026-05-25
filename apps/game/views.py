@@ -25,9 +25,16 @@ def index(request: HttpRequest) -> HttpResponse:
             most_played = most_played_data["artist"]
             play_count = most_played_data["times_played"]
 
+    top_scores = (
+        UserScore.objects.filter(completed=True, user__profile__show_on_leaderboard=True)
+        .select_related("user")
+        .order_by("-score", "-created_at")[:5]
+    )
+
     context = {
         "most_played_artist": most_played,
         "play_count": play_count,
+        "top_scores": top_scores,
     }
     return render(request, "game/index.html", context=context)
 
@@ -211,6 +218,7 @@ def victory(request: HttpRequest) -> HttpResponse:
         "total_rounds": total_rounds,
         "correct_count": correct_count,
         "score": score,
+        "points": score,
         "lives_remaining": lives_remaining,
         "round_summary": request.session.get("round_summary", []),
         "difficulty": difficulty,
@@ -254,3 +262,14 @@ def game_over(request: HttpRequest) -> HttpResponse:
         "game_artist": artist,
     }
     return render(request, "game/game-over.html", context)
+
+def leaderboard(request: HttpRequest) -> HttpResponse:
+    top_scores = (
+        UserScore.objects.filter(completed=True, user__profile__show_on_leaderboard=True)
+        .select_related("user")
+        .order_by("-score", "-created_at")[:50]
+    )
+    context = {
+        "top_scores": top_scores,
+    }
+    return render(request, "game/leaderboard.html", context)

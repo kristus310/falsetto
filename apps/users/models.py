@@ -66,6 +66,10 @@ class UserScore(models.Model):
         return f"{self.user} | {self.artist} | {self.difficulty} | {self.score}"
 
     @property
+    def points(self) -> int:
+        return self.score
+
+    @property
     def accuracy(self) -> float:
         if not self.total_rounds:
             return 0.0

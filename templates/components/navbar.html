@@ -6,7 +6,7 @@
             </div>
             <ul tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
                 <li><a href="{% url 'game:lobby' %}">Play</a></li>
-                <li><a href="#">Leaderboards</a></li>
+                <li><a href="{% url 'game:leaderboard' %}">Leaderboards</a></li>
                 <li><a href="{% url 'pages:faq' %}">How to play</a></li>
             </ul>
         </div>
@@ -33,7 +33,7 @@
     <div class=" navbar-center hidden lg:flex">
         <ul class="menu menu-horizontal px-1">
             <li><a href="{% url 'game:lobby' %}">Play</a></li>
-            <li><a href="#">Leaderboards</a></li>
+            <li><a href="{% url 'game:leaderboard' %}">Leaderboards</a></li>
             <li><a href="{% url 'pages:faq' %}">How to play</a></li>
         </ul>
     </div>

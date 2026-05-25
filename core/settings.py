@@ -247,5 +247,5 @@ LOGGING = {
 }
 
 # LASTFM
-LASTFM_API_KEY = env("LASTFM_API_KEY")
+LASTFM_API_KEY = env("LASTFM_API_KEY", default=None)
 LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"

@@ -8,6 +8,7 @@ from typing import Final, Set
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 
 from . import helper
@@ -134,6 +135,8 @@ class LastFMAPI:
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
     def _get(self, params: dict) -> dict:
+        if not self.api_key:
+            raise ImproperlyConfigured("LASTFM_API_KEY is not set in the environment or .env file.")
         params.update({"api_key": self.api_key, "format": "json"})
         try:
             response = self.session.get(self.base_url, params=params, timeout=(3.05, 10))

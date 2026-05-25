@@ -15,8 +15,8 @@
             Guess the <span class="text-secondary">Lyrics</span>
         </h1>
         <p class="text-base-content/60 text-lg max-w-md">
-            A snippet drops. You name the song. Simple — unless your music knowledge is just vibes.
-            You name the band. You choose the difficulty. And then you simply test your music knowledge!
+            A lyric snippet drops with a missing word. Fill in the blank to score. Simple — unless your music knowledge is just vibes.
+            You name the band. You choose the difficulty. And then you test your music knowledge!
         </p>
 
         <div class="flex flex-col sm:flex-row gap-5">
@@ -31,7 +31,7 @@
                     </svg>
                 </div>
             </a>
-            <a href="#" class="btn btn-accent btn-lg">
+            <a href="{% url 'game:leaderboard' %}" class="btn btn-accent btn-lg">
                 <div class="flex items-center justify-center gap-3">
                     <span>Leaderboard</span>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -156,7 +156,7 @@
                     </svg>
                 </div>
                 <h3 class="card-title text-secondary">Guess & score</h3>
-                <p class="text-sm text-base-content/60">Try to guess to what song the lyrics belong</p>
+                <p class="text-sm text-base-content/60">Try to guess the missing word from the lyric snippet</p>
             </div>
         </div>
 
@@ -169,7 +169,7 @@
 <section class="py-16 px-6 max-w-2xl mx-auto">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-bold">Top players</h2>
-        <a href="#" class="link link-primary text-sm">View all →</a>
+        <a href="{% url 'game:leaderboard' %}" class="link link-primary text-sm">View all →</a>
     </div>
     <div class="flex flex-col gap-2">
         {% for score in top_scores|slice:":5" %}

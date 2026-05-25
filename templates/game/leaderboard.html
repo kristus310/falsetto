@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-4rem)] bg-base-100 py-16 px-4 md:px-8">
+    <div class="max-w-4xl mx-auto flex flex-col gap-10">
+        
+        <!-- Header -->
+        <div class="text-center flex flex-col gap-3">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight uppercase leading-none">
+                Global <span class="text-primary">Leaderboards</span>
+            </h1>
+            <p class="text-base-content/50 text-sm max-w-sm mx-auto">
+                The absolute best lyric guessers. Compete, score high, and cement your legacy!
+            </p>
+        </div>
+
+        <!-- Leaderboard Table -->
+        <div class="card bg-base-200 border border-base-300 shadow-xl overflow-hidden">
+            <div class="card-body p-0">
+                {% if top_scores %}
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full text-left">
+                        <thead>
+                            <tr class="border-b border-base-300 text-base-content/60 bg-base-300/30 uppercase tracking-wider text-xs font-bold">
+                                <th class="py-4 px-6 text-center w-16">Rank</th>
+                                <th class="py-4 px-6">Player</th>
+                                <th class="py-4 px-6">Artist Sourced</th>
+                                <th class="py-4 px-6 text-center">Difficulty</th>
+                                <th class="py-4 px-6 text-center">Accuracy</th>
+                                <th class="py-4 px-6 text-right">Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for score in top_scores %}
+                            <tr class="hover:bg-base-300/20 border-b border-base-300/50 transition-colors">
+                                <td class="py-4 px-6 text-center font-black">
+                                    {% if forloop.counter == 1 %}
+                                        <span class="badge badge-warning font-black text-warning-content shadow">1st</span>
+                                    {% elif forloop.counter == 2 %}
+                                        <span class="badge badge-slate-400 bg-neutral-content text-neutral font-black shadow-sm">2nd</span>
+                                    {% elif forloop.counter == 3 %}
+                                        <span class="badge badge-amber-700 bg-amber-600/20 text-amber-700 font-black">3rd</span>
+                                    {% else %}
+                                        <span class="text-base-content/40 text-sm">#{{ forloop.counter }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-4 px-6 font-bold flex items-center gap-3">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-primary/10 text-primary rounded-full w-8">
+                                            <span class="text-xs uppercase font-bold">{{ score.user.username|slice:":2" }}</span>
+                                        </div>
+                                    </div>
+                                    <span class="truncate">{{ score.user.username }}</span>
+                                </td>
+                                <td class="py-4 px-6 text-base-content/80 font-medium">
+                                    {{ score.artist|capfirst }}
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    <span class="badge {% if score.difficulty == 'easy' %}badge-info{% elif score.difficulty == 'medium' %}badge-success{% elif score.difficulty == 'hard' %}badge-warning{% else %}badge-error{% endif %} badge-sm font-semibold capitalize">
+                                        {{ score.get_difficulty_display }}
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-center font-bold text-base-content/70">
+                                    {{ score.accuracy }}%
+                                </td>
+                                <td class="py-4 px-6 text-right font-black text-primary text-base">
+                                    {{ score.points }} <span class="text-xs opacity-60 font-semibold">pts</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="py-16 text-center flex flex-col items-center gap-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-16 text-base-content/20">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.97 5.97 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.771m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94-3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                    </svg>
+                    <h3 class="text-xl font-bold text-base-content/70">No scores recorded yet</h3>
+                    <p class="text-sm text-base-content/40 max-w-xs">Be the first to score! Head to the lobby and start playing to make your mark on history.</p>
+                    <a href="{% url 'game:lobby' %}" class="btn btn-primary mt-2">Start Playing</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Back Link -->
+        <div class="text-center">
+            <a href="{% url 'game:index' %}" class="btn btn-ghost btn-sm gap-2">
+                ← Back to Home
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

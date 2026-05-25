@@ -476,3 +476,56 @@ class ScorePersistenceTests(TestCase):
         self.client.get(reverse("game:game_over"))
         self.client.get(reverse("game:game_over"))
         self.assertEqual(UserScore.objects.filter(user=self.user).count(), 1)
+
+
+class ProductionReadinessTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testplayer", email="player@test.com", password="password123")
+        self.user_hidden = User.objects.create_user(username="ghostplayer", email="ghost@test.com", password="password123")
+        
+        # profile is auto-created by signals, let's update hidden user's profile
+        profile = self.user_hidden.profile
+        profile.show_on_leaderboard = False
+        profile.save()
+
+        # Create scores
+        UserScore.objects.create(user=self.user, artist="Muse", score=500, completed=True)
+        UserScore.objects.create(user=self.user_hidden, artist="Muse", score=1000, completed=True)
+        UserScore.objects.create(user=self.user, artist="Radiohead", score=300, completed=False) # Not completed
+
+    def test_index_view_top_scores_in_context(self):
+        response = self.client.get(reverse("game:index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("top_scores", response.context)
+        top_scores = response.context["top_scores"]
+        self.assertEqual(len(top_scores), 1)
+        self.assertEqual(top_scores[0].user, self.user)
+        self.assertEqual(top_scores[0].score, 500)
+
+    def test_victory_view_points_in_context(self):
+        self.client.force_login(self.user)
+        s = self.client.session
+        s["game_status"] = "won"
+        s["game_artist"] = "Muse"
+        s["difficulty"] = "medium"
+        s["score"] = 500
+        s["correct_count"] = 5
+        s["total_rounds"] = 5
+        s["lives"] = {"1": True, "2": True, "3": True}
+        s["round_summary"] = []
+        s["score_saved"] = False
+        s.save()
+
+        response = self.client.get(reverse("game:victory"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("points", response.context)
+        self.assertEqual(response.context["points"], 500)
+
+    def test_leaderboard_view_status_and_filtering(self):
+        response = self.client.get(reverse("game:leaderboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("top_scores", response.context)
+        top_scores = response.context["top_scores"]
+        self.assertEqual(len(top_scores), 1)
+        self.assertEqual(top_scores[0].user, self.user)
+        self.assertEqual(top_scores[0].score, 500)

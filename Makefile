@@ -45,10 +45,10 @@ superuser:
 
 build:
 	$(MANAGE) tailwind build
-	$(MANAGE) collectstatic --no-input
+	$(MANAGE) collectstatic --no-input --ignore css/input.css
 
 collectstatic:
-	$(MANAGE) collectstatic --no-input
+	$(MANAGE) collectstatic --no-input --ignore css/input.css
 
 serve:
 	uv run gunicorn core.wsgi:application --bind 0.0.0.0:8000
