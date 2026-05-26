@@ -70,6 +70,8 @@ def lobby(request: HttpRequest) -> HttpResponse:
         request.session["round_summary"] = []
         request.session["score_saved"] = False
 
+        GameService().warm_up_cache_async(artist, difficulty)
+
         return redirect("game:game")
     return render(request, "game/lobby.html")
 
@@ -92,6 +94,8 @@ def game(request: HttpRequest) -> HttpResponse:
         request.session["game_status"] = "won"
         return redirect("game:victory")
 
+    game_service = GameService()
+
     action = request.POST.get("action") or request.GET.get("action")
     if request.method == "POST" and action:
         if action == "quit":
@@ -106,7 +110,6 @@ def game(request: HttpRequest) -> HttpResponse:
             return redirect("game:game")
 
     if not music:
-        game_service = GameService()
         attempts = 0
         while attempts < 3:
             music = game_service.generate_round_data(artist, difficulty)
@@ -153,8 +156,9 @@ def game(request: HttpRequest) -> HttpResponse:
                 })
                 request.session["round_summary"] = summary
                 request.session.modified = True
+
+                game_service.warm_up_cache_async(artist, difficulty)
             else:
-                game_service = GameService()
                 request.session["streak"] = 0
                 lives, is_dead = game_service.remove_live(lives)
                 request.session["lives"] = lives
@@ -173,6 +177,7 @@ def game(request: HttpRequest) -> HttpResponse:
                     request.session.modified = True
                     return redirect("game:game_over")
 
+                game_service.warm_up_cache_async(artist, difficulty)
                 messages.error(request, "Incorrect lyric guess! Try again.")
     else:
         form = LyricsGuessForm()

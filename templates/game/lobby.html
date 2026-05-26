@@ -17,7 +17,8 @@
             </p>
         </div>
 
-        <form method="POST" class="card bg-base-200 border border-base-300 shadow-xl">
+        <form method="POST" class="card bg-base-200 border border-base-300 shadow-xl" id="lobby-form"
+            onclick="if(this.checkValidity()) { this.querySelector('.submit-spinner').classList.remove('hidden'); this.querySelector('.submit-icon').classList.add('hidden'); }">
             {% csrf_token %}
             <div class="card-body gap-6">
 
@@ -153,9 +154,10 @@
 
                 <div class="card-actions pt-2">
                     <button type="submit" class="btn btn-secondary btn-lg w-full gap-3">
+                        <span class="loading loading-spinner submit-spinner hidden"></span>
                         <span>Start round</span>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            class="h-5 w-5 stroke-current shrink-0">
+                            class="h-5 w-5 stroke-current shrink-0 submit-icon">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
                         </svg>

@@ -193,15 +193,6 @@
                             {% if user.profile.show_on_leaderboard %}checked{% endif %} />
                     </div>
 
-                    <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
-                        <div>
-                            <p class="font-semibold text-sm">Strict matching</p>
-                            <p class="text-xs text-base-content/40 mt-0.5">Require exact song title — no fuzzy matching
-                            </p>
-                        </div>
-                        <input type="checkbox" name="strict_matching" class="toggle toggle-secondary shrink-0"
-                            {% if user.profile.strict_matching %}checked{% endif %} />
-                    </div>
 
                     <div class="flex items-center justify-between py-4 gap-6">
                         <div>

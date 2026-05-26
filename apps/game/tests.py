@@ -75,6 +75,10 @@ class IsCorrectGuessTests(TestCase):
     def test_single_char_off(self):
         self.assertTrue(is_correct_guess("yesterdey", "yesterday"))
 
+    def test_single_letter_cheat_rejected(self):
+        self.assertFalse(is_correct_guess("a", "beautiful"))
+        self.assertFalse(is_correct_guess("e", "yesterday"))
+        self.assertFalse(is_correct_guess("o", "love"))
 
 class GameServiceTests(TestCase):
     def setUp(self):

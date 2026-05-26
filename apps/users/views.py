@@ -111,10 +111,9 @@ def settings(request: HttpRequest) -> HttpResponse:
 
         elif action == "preferences":
             user_profile.show_on_leaderboard = "show_on_leaderboard" in request.POST
-            user_profile.strict_matching = "strict_matching" in request.POST
             user_profile.email_notifications = "email_notifications" in request.POST
             user_profile.save(update_fields=[
-                "show_on_leaderboard", "strict_matching", "email_notifications"
+                "show_on_leaderboard", "email_notifications"
             ])
             messages.success(request, "Preferences saved.")
             return redirect("users:settings")

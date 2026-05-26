@@ -1,5 +1,6 @@
 import random
 import re
+import threading
 import unicodedata
 import logging
 from difflib import SequenceMatcher
@@ -24,7 +25,6 @@ _BASE_SCORE = 100
 _LIVES_BONUS_PER_LIFE = 10
 _STREAK_BONUS_PER_ROUND = 15
 
-
 def calculate_score(difficulty: str, lives: Dict[str, bool], streak: int) -> int:
     multiplier = _DIFFICULTY_MULTIPLIER.get(difficulty, 1.0)
     lives_remaining = sum(1 for v in lives.values() if v)
@@ -40,7 +40,6 @@ def _normalise(text: str) -> str:
     return " ".join(text.split())
 
 def is_correct_guess(guess: str, answer: str) -> bool:
-    threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
     g = _normalise(guess)
     a = _normalise(answer)
 
@@ -48,9 +47,11 @@ def is_correct_guess(guess: str, answer: str) -> bool:
         return False
     if g == a:
         return True
-    if g in a or a in g:
+
+    if (g in a or a in g) and len(g) >= 3 and len(g) >= int(len(a) * 0.7):
         return True
 
+    threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
     ratio = SequenceMatcher(None, g, a).ratio()
     return ratio >= threshold
 
@@ -68,6 +69,74 @@ class GameService:
 
         game_over = not any(updated_lives.values())
         return updated_lives, game_over
+
+    def warm_up_cache_async(self, artist: str, difficulty: str) -> None:
+        def _run() -> None:
+            try:
+                django_setup_needed = False
+                try:
+                    from django.db import connection as _conn
+                    _conn.ensure_connection()
+                except Exception:
+                    django_setup_needed = True
+
+                if django_setup_needed:
+                    import django
+                    django.setup()
+
+                tracks = self.lastfm.get_top_tracks(artist)
+                if not tracks:
+                    logger.debug("warm_up_cache_async: no tracks found for '%s'", artist)
+                    return
+
+                import math as _math
+                count = len(tracks)
+                MIN_POOL = 3
+
+                if difficulty == "easy":
+                    cutoff = max(MIN_POOL, _math.ceil(count * 0.20))
+                    candidates = tracks[:cutoff]
+                elif difficulty == "medium":
+                    start = _math.ceil(count * 0.20)
+                    end = _math.ceil(count * 0.55)
+                    candidates = tracks[start:end] or tracks[:MIN_POOL]
+                elif difficulty == "hard":
+                    start = _math.ceil(count * 0.55)
+                    candidates = tracks[start:] or tracks[-MIN_POOL:]
+                else:
+                    start = _math.ceil(count * 0.75)
+                    candidates = tracks[start:] or tracks[-MIN_POOL:]
+
+                for track in candidates[:5]:
+                    try:
+                        self.lrclib.get_lyrics(
+                            track_name=track["name"],
+                            artist_name=artist,
+                        )
+                    except Exception as lyric_exc:
+                        logger.debug(
+                            "warm_up_cache_async: lyric fetch skipped for '%s' / '%s': %s",
+                            artist, track["name"], lyric_exc,
+                        )
+
+                logger.debug(
+                    "warm_up_cache_async: finished warming cache for '%s' (%s)",
+                    artist, difficulty,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "warm_up_cache_async: background thread failed for '%s': %s",
+                    artist, exc,
+                )
+            finally:
+                try:
+                    from django.db import connection as _conn
+                    _conn.close()
+                except Exception:
+                    pass
+
+        thread = threading.Thread(target=_run, daemon=True, name=f"cache-warm-{artist[:20]}")
+        thread.start()
 
     def generate_round_data(self, artist: str, difficulty: str) -> Optional[Dict[str, Any]]:
         try:

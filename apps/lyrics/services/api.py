@@ -15,6 +15,23 @@ from . import helper
 
 logger = logging.getLogger(__name__)
 
+def _build_retry_session(*, user_agent: str | None = None) -> requests.Session:
+    session = requests.Session()
+    if user_agent:
+        session.headers.update({"User-Agent": user_agent})
+    retries = Retry(
+        total=3,
+        backoff_factor=0.5,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+    )
+    session.mount("https://", HTTPAdapter(
+        max_retries=retries,
+        pool_connections=4,
+        pool_maxsize=8,
+    ))
+    return session
+
 @dataclass(frozen=True)
 class LyricsResult:
     track_name: str
@@ -117,22 +134,18 @@ class LyricsResult:
         start = random.randint(0, len(chosen_block) - span)
         return chosen_block[start: start + span]
 
-
 class LRCLIBAPIError(Exception):
     pass
 
-
 class LastFMAPI:
-    _PAGE_LIMIT: Final[int] = 500
-    _MAX_PAGES: Final[int] = 3
+    _PAGE_LIMIT: Final[int] = 200
+    _MAX_PAGES: Final[int] = 1
     DIFFICULTIES: Final[Set[str]] = {"easy", "medium", "hard", "insane"}
 
     def __init__(self):
         self.api_key = settings.LASTFM_API_KEY
         self.base_url = settings.LASTFM_BASE_URL
-        self.session = requests.Session()
-        retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])
-        self.session.mount("https://", HTTPAdapter(max_retries=retries))
+        self.session = _build_retry_session()
 
     def _get(self, params: dict) -> dict:
         if not self.api_key:
@@ -173,51 +186,52 @@ class LastFMAPI:
         clean_artist_name = artist_name.strip()
 
         try:
-            with transaction.atomic():
-                artist_obj = Artist.objects.select_for_update().get(name__iexact=clean_artist_name)
-                if artist_obj.is_fully_cached:
-                    return [
-                        {"name": t.name, "playcount": t.playcount, "mbid": t.mbid}
-                        for t in artist_obj.tracks.all()
-                    ]
+            artist_obj = Artist.objects.get(name__iexact=clean_artist_name)
+            if artist_obj.is_fully_cached:
+                return [
+                    {"name": t.name, "playcount": t.playcount, "mbid": t.mbid}
+                    for t in artist_obj.tracks.all()
+                ]
         except Artist.DoesNotExist:
-            artist_obj = None
+            pass
 
         try:
             raw_tracks = self._fetch_all_raw_tracks(clean_artist_name)
             if not raw_tracks:
                 return []
-
             tracks = self._deduplicate(raw_tracks)
-
-            with transaction.atomic():
-                if artist_obj is None:
-                    artist_obj, _ = Artist.objects.get_or_create(name=clean_artist_name)
-                else:
-                    artist_obj = Artist.objects.select_for_update().get(pk=artist_obj.pk)
-
-                Track.objects.filter(artist=artist_obj).delete()
-
-                track_batch = [
-                    Track(artist=artist_obj, name=t["name"].strip(), playcount=t["playcount"], mbid=t["mbid"])
-                    for t in tracks
+        except Exception as e:
+            logger.error(f"Network error fetching top tracks for '{clean_artist_name}': {e}")
+            try:
+                artist_obj = Artist.objects.get(name__iexact=clean_artist_name)
+                return [
+                    {"name": t.name, "playcount": t.playcount, "mbid": t.mbid}
+                    for t in Track.objects.filter(artist=artist_obj)
                 ]
-                Track.objects.bulk_create(track_batch)
+            except Artist.DoesNotExist:
+                return []
+
+        try:
+            with transaction.atomic():
+                artist_obj, _ = Artist.objects.get_or_create(name=clean_artist_name)
+
+                for t in tracks:
+                    Track.objects.get_or_create(
+                        artist=artist_obj,
+                        name=t["name"].strip(),
+                        defaults={
+                            "playcount": t["playcount"],
+                            "mbid": t["mbid"]
+                        }
+                    )
 
                 artist_obj.is_fully_cached = True
                 artist_obj.save()
 
             return tracks
         except Exception as e:
-            logger.error(f"Error handling get_top_tracks for '{clean_artist_name}': {e}")
-            if artist_obj:
-                fallback_tracks = Track.objects.filter(artist=artist_obj)
-                if fallback_tracks.exists():
-                    return [
-                        {"name": t.name, "playcount": t.playcount, "mbid": t.mbid}
-                        for t in fallback_tracks
-                    ]
-            return []
+            logger.error(f"Error saving top tracks for '{clean_artist_name}': {e}")
+            return tracks
 
     def get_track(self, artist: str, difficulty: str) -> dict | None:
         if difficulty not in self.DIFFICULTIES:
@@ -305,10 +319,7 @@ class LRCLIBAPI:
     def __init__(self) -> None:
         self.base_url: str = getattr(settings, "LRCLIB_BASE_URL", self._BASE_URL_DEFAULT).rstrip("/")
         user_agent: str = getattr(settings, "LRCLIB_USER_AGENT", self._UA_DEFAULT)
-        self.session = requests.Session()
-        self.session.headers.update({"User-Agent": user_agent})
-        retries = Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504], allowed_methods=["GET"])
-        self.session.mount("https://", HTTPAdapter(max_retries=retries))
+        self.session = _build_retry_session(user_agent=user_agent)
 
     def _get(self, endpoint: str, params: dict | None = None) -> dict | list:
         url = f"{self.base_url}{endpoint}"
@@ -372,7 +383,7 @@ class LRCLIBAPI:
                     instrumental=cache_entry.instrumental
                 )
         except Track.DoesNotExist:
-            track_obj = None
+            pass
 
         result = self._fetch_lyrics_direct(clean_track, clean_artist)
         if result is None:
@@ -381,8 +392,7 @@ class LRCLIBAPI:
         try:
             with transaction.atomic():
                 artist_obj, _ = Artist.objects.get_or_create(name=clean_artist)
-                if not track_obj:
-                    track_obj, _ = Track.objects.get_or_create(artist=artist_obj, name=clean_track)
+                track_obj, _ = Track.objects.get_or_create(artist=artist_obj, name=clean_track)
 
                 if result is not None:
                     LyricCache.objects.update_or_create(
@@ -442,7 +452,6 @@ class LRCLIBAPI:
                 return self._parse_result(item)
 
         return self._parse_result(data[0])
-
 
 _LYRIC_FILLER_WORDS: Final[frozenset] = frozenset({
     "a", "an", "the", "and", "or", "but", "so", "of", "in", "on",

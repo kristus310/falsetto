@@ -57,7 +57,6 @@ class UserProfileSignalTests(TestCase):
         )
         profile = user.profile
         self.assertTrue(profile.show_on_leaderboard)
-        self.assertFalse(profile.strict_matching)
         self.assertTrue(profile.email_notifications)
 
     def test_get_or_create_idempotent(self):
@@ -97,11 +96,11 @@ class SettingsViewTests(TestCase):
     def test_update_preferences(self):
         response = self.client.post(reverse("users:settings"), {
             "action": "preferences",
-            "strict_matching": "on",
+            "email_notifications": "on",
         })
         self.assertRedirects(response, reverse("users:settings"))
         self.user.profile.refresh_from_db()
-        self.assertTrue(self.user.profile.strict_matching)
+        self.assertTrue(self.user.profile.email_notifications)
         self.assertFalse(self.user.profile.show_on_leaderboard)
 
     def test_delete_account_wrong_password(self):

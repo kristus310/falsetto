@@ -39,7 +39,6 @@ class UserProfile(models.Model):
         validators=[validate_avatar],
     )
     show_on_leaderboard = models.BooleanField(default=True)
-    strict_matching = models.BooleanField(default=False)
     email_notifications = models.BooleanField(default=True)
 
     @property
