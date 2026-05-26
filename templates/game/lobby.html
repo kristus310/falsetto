@@ -18,7 +18,7 @@
         </div>
 
         <form method="POST" class="card bg-base-200 border border-base-300 shadow-xl" id="lobby-form"
-            onclick="if(this.checkValidity()) { this.querySelector('.submit-spinner').classList.remove('hidden'); this.querySelector('.submit-icon').classList.add('hidden'); }">
+            onsubmit="if(this.checkValidity()) { this.querySelector('.submit-spinner').classList.remove('hidden'); this.querySelector('.submit-icon').classList.add('hidden'); }">
             {% csrf_token %}
             <div class="card-body gap-6">
 

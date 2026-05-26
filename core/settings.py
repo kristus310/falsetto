@@ -82,7 +82,11 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 _db_config = env.db("DATABASE_URL", default=f"sqlite:////{BASE_DIR}/db.sqlite3")
 
-if not _db_config["ENGINE"].endswith("sqlite3"):
+if _db_config["ENGINE"].endswith("sqlite3"):
+    _db_config.setdefault("OPTIONS", {})
+    _db_config["OPTIONS"]["timeout"] = 20
+    _db_config["OPTIONS"]["init_command"] = "PRAGMA journal_mode=WAL;"
+else:
     _db_config["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)
     _db_config["CONN_HEALTH_CHECKS"] = True
 
