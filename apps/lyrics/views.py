@@ -2,7 +2,9 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from .services import LastFMAPI, LRCLIBAPI
+from core.throttle import rate_limit
 
+@rate_limit(max_requests=10, window_seconds=60)
 @staff_member_required
 def fetch(request: HttpRequest, artist_slug: str, difficulty_slug: str) -> HttpResponse:
     artist = artist_slug.strip()

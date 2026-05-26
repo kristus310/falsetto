@@ -19,6 +19,9 @@ help:
 	@echo "  make build          - Production build (tailwind + static)"
 	@echo "  make clean          - Remove pycache and temporary files"
 	@echo "  make serve          - Run production gunicorn server"
+	@echo "  make warmup         - Warm up the database with artist"
+	@echo "  make cleanup-om-dry - Show what user media files are not used"
+	@echo "  make cleanup-om     - Remove the not-used user media files"
 
 install:
 	mise use python@$(PYTHON_VERSION)
@@ -56,6 +59,15 @@ serve:
 test:
 	$(MANAGE) collectstatic --noinput --ignore css/input.css
 	$(MANAGE) test apps --pattern="tests.py" --verbosity=2
+
+warmup:
+	$(MANAGE) warm_music_up
+
+cleanup-om-dry:
+	$(MANAGE) cleanup_orphaned_media --dry-run
+
+cleanup-om:
+	$(MANAGE) cleanup_orphaned_media
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +

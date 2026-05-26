@@ -6,6 +6,8 @@ from .forms import LyricsGuessForm
 from .services import GameService, is_correct_guess, calculate_score
 
 from apps.users.models import UserScore
+from core.throttle import rate_limit
+
 
 _VALID_DIFFICULTIES = {"easy", "medium", "hard", "insane"}
 
@@ -38,6 +40,7 @@ def index(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "game/index.html", context=context)
 
+@rate_limit(max_requests=5, window_seconds=60)
 def lobby(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         artist = request.POST.get("artist", "").strip().title()

@@ -1,6 +1,9 @@
 import environ
 import os
 from pathlib import Path
+import sys
+
+TESTING = "test" in sys.argv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
