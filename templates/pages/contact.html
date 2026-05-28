@@ -3,8 +3,16 @@
 {% block title %}Contact Me{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-6 py-16">
+<div class="max-w-7xl mx-auto px-6 pt-8">
+    <div class="text-sm breadcrumbs mb-2 text-base-content/40 hidden md:block">
+        <ul>
+            <li><a href="{% url 'game:index' %}">Home</a></li>
+            <li class="text-primary/80">Contact</li>
+        </ul>
+    </div>
+</div>
 
+<div class="max-w-3xl mx-auto px-6 py-8">
     <div class="text-center max-w-2xl mx-auto mb-12 space-y-4">
         <h1 class="text-4xl md:text-5xl font-black tracking-tight text-base-content leading-none uppercase">
             Contact <span class="text-secondary">me!</span>

@@ -89,7 +89,7 @@
                 </div>
             </div>
             <div class="stat-title">Your Go-To Artists</div>
-            <div class="stat-value text-primary">{{ most_played_artist|capfirst  }}</div>
+            <div class="stat-value text-primary">{{ most_played_artist|capfirst }}</div>
             <div class="stat-desc">Times played: <span class="text-primary">{{ play_count }}</span></div>
         </div>
         {% else %}
@@ -164,27 +164,41 @@
     </div>
 </section>
 
-{% if top_scores %}
 <div class="divider max-w-5xl mx-auto px-6"></div>
 
-<section class="py-16 px-6 max-w-2xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold">Top players</h2>
-        <a href="{% url 'game:leaderboard' %}" class="link link-primary text-sm">View all →</a>
-    </div>
-    <div class="flex flex-col gap-2">
-        {% for score in top_scores|slice:":5" %}
-        <div class="flex items-center gap-4 bg-base-200 rounded-xl px-5 py-3 border border-base-300">
-            <span
-                class="font-black text-lg w-6 text-center {% if forloop.counter == 1 %}text-primary{% else %}text-base-content/30{% endif %}">
-                {{ forloop.counter }}
-            </span>
-            <span class="flex-1 text-sm">{{ score.user.username }}</span>
-            <span class="badge badge-primary badge-outline">{{ score.points }} pts</span>
+<section class="py-12 px-6 max-w-5xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h2 class="text-3xl font-bold tracking-tight">Latest Updates and News</h2>
+            <p class="text-sm text-base-content/60 mt-1">Stay tuned on what's new in Falsetto</p>
         </div>
-        {% endfor %}
+        <a href="{% url 'pages:news' %}" class="btn btn-ghost btn-sm text-primary gap-1">
+            View more
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+        </a>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+
+        <div class="card bg-base-200 border border-base-300 shadow-sm hover:border-secondary/30 transition-all">
+            <div class="card-body p-6 gap-3">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="badge badge-secondary text-xs font-semibold">Launch</span>
+                    <span class="text-xs text-base-content/50 font-medium">June 2026</span>
+                </div>
+                <h3 class="card-title text-xl font-bold text-base-content">Falsetto 1.0 is officially live!</h3>
+                <p class="text-sm text-base-content/70 leading-relaxed">
+                    Welcome to Falsetto! This app is a passion project of mine and I hope you enjoy it. Since this is
+                    the first release, you might run into a few rough
+                    edges or some bugs, if you spot any, please let me know so I can get them fixed! Enjoy!
+                </p>
+            </div>
+        </div>
+
     </div>
 </section>
-{% endif %}
 
 {% endblock %}

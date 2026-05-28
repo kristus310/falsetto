@@ -15,6 +15,9 @@ def faq(request: HttpRequest) -> HttpResponse:
 def legal(request: HttpRequest) -> HttpResponse:
     return render(request, "pages/legal.html")
 
+def news(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/news.html")
+
 @require_GET
 def set_theme(request: HttpRequest) -> HttpResponse:
     origin_url = request.GET.get("next", "")

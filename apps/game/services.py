@@ -6,8 +6,6 @@ import logging
 from difflib import SequenceMatcher
 from typing import Dict, Any, Tuple, Optional
 
-from django.conf import settings
-
 from apps.lyrics.services.api import LastFMAPI, LRCLIBAPI, LyricsResult
 from apps.lyrics.services.api import _LYRIC_FILLER_WORDS
 
@@ -54,7 +52,7 @@ def is_correct_guess(guess: str, answer: str) -> bool:
     if (g in a or a in g) and len(g) >= 3 and len(g) >= int(len(a) * 0.7):
         return True
 
-    threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
+    threshold: float = 0.85
     ratio = SequenceMatcher(None, g, a).ratio()
     return ratio >= threshold
 

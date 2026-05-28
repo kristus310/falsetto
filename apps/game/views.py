@@ -29,16 +29,9 @@ def index(request: HttpRequest) -> HttpResponse:
             most_played = most_played_data["artist"]
             play_count = most_played_data["times_played"]
 
-    top_scores = (
-        UserScore.objects.filter(completed=True, user__profile__show_on_leaderboard=True)
-        .select_related("user")
-        .order_by("-score", "-created_at")[:5]
-    )
-
     context = {
         "most_played_artist": most_played,
         "play_count": play_count,
-        "top_scores": top_scores,
     }
     return render(request, "game/index.html", context=context)
 

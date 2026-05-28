@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Updates & News{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 pt-8">
+    <div class="text-sm breadcrumbs mb-2 text-base-content/40 hidden md:block">
+        <ul>
+            <li><a href="{% url 'game:index' %}">Home</a></li>
+            <li class="text-primary/80">Updates & News</li>
+        </ul>
+    </div>
+</div>
+
+<div class="max-w-5xl mx-auto px-6 py-8">
+    <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-base-content leading-none uppercase">
+            Updates & <span class="text-primary">News</span>
+        </h1>
+        <p class="text-base-content/70 text-lg">
+            Follow along with everything we are building, fixing, and tuning under the hood of Falsetto.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+
+        <div class="md:col-span-2 space-y-12">
+
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="h-6 w-2 rounded-full bg-accent"></div>
+                    <h2 class="text-2xl font-black tracking-tight text-base-content uppercase">
+                        Falsetto 1.0 is Officially Live!
+                    </h2>
+                    <span
+                        class="text-xs text-base-content/40 font-bold tracking-wider uppercase ml-auto hidden sm:inline">June
+                        2026</span>
+                </div>
+                <div class="text-xs text-base-content/40 font-bold tracking-wider uppercase sm:hidden -mt-2 mb-1">June
+                    2026</div>
+                <p class="text-base-content/80 leading-relaxed">
+                    Welcome to Falsetto! This app is a passion project of mine and I hope you enjoy it. Since this is
+                    the first release, you might run into a few rough
+                    edges or some bugs, if you spot any, please let me know so I can get them fixed! Enjoy!
+                </p>
+            </div>
+
+        </div>
+
+        <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl p-6 space-y-6">
+
+            <div class="space-y-1">
+                <h3 class="text-lg font-black text-base-content uppercase tracking-tight">Minor Patches</h3>
+                <p class="text-xs uppercase tracking-wider font-bold text-base-content/40">Maintenance Logs</p>
+            </div>
+
+            <hr class="border-base-300" />
+
+            <div class="space-y-4 text-sm text-base-content/80 leading-relaxed">
+                <div class="space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="font-black text-xs text-success">v1.0.0</span>
+                        <span class="text-[10px] text-base-content/40 uppercase font-bold">Launch</span>
+                    </div>
+                    <p class="text-xs text-base-content/70">Launch day!</p>
+                </div>
+            </div>
+
+            <hr class="border-base-300" />
+
+            <div class="space-y-2">
+                <a href="mailto:support@falsetto.com"
+                    class="btn btn-primary btn-block uppercase font-black tracking-wide rounded-xl">
+                    Report A Bug
+                </a>
+                <a href="{% url 'game:lobby' %}"
+                    class="btn btn-ghost btn-block border border-base-300 uppercase font-black tracking-wide rounded-xl">
+                    Back to Lobby
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
