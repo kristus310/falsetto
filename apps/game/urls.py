@@ -6,6 +6,7 @@ app_name = "game"
 urlpatterns: list[URLPattern] = [
     path("", views.index, name="index"),
     path("lobby/", views.lobby, name="lobby"),
+    path("pick-song/", views.pick_song_lobby, name="pick_song_lobby"),
     path("game/", views.game, name="game"),
     path("victory/", views.victory, name="victory"),
     path("game-over/", views.game_over, name="game_over"),

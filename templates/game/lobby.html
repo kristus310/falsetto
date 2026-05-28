@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Set Up Your Round{% endblock %}
+{% block title %}Lobby{% endblock %}
 
 {% block content %}
 
-<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-40">
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-20">
     <div class="w-full max-w-xl flex flex-col gap-8">
 
         <div class="text-center flex flex-col gap-3">
@@ -13,13 +13,68 @@
                 Set up your <span class="text-primary">round</span>
             </h1>
             <p class="text-base-content/50 text-sm max-w-xs mx-auto">
-                Pick an artist and a difficulty, then we'll find a song and drop the lyrics.
+                Pick a mode, an artist and a difficulty, then we'll find a song and drop the lyrics.
             </p>
+        </div>
+
+        <div class="flex flex-col gap-3">
+            <p class="text-sm font-semibold text-base-content/50 uppercase tracking-widest text-center">Choose a mode
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="mode-group">
+
+                <label class="cursor-pointer">
+                    <input type="radio" name="mode_select" value="complete_lyrics" class="sr-only peer" checked />
+                    <div class="peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary
+                                border border-base-300 rounded-xl p-4 flex flex-col gap-2 items-center text-center
+                                transition-all hover:border-primary/40 text-base-content/50 h-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            class="h-7 w-7 stroke-current">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                        </svg>
+                        <span class="font-black text-sm leading-tight">Complete the Lyrics</span>
+                        <span class="text-xs leading-tight opacity-70">Fill in the missing word from a lyric
+                            snippet</span>
+                    </div>
+                </label>
+
+                <label class="cursor-pointer">
+                    <input type="radio" name="mode_select" value="guess_song" class="sr-only peer" />
+                    <div class="peer-checked:border-secondary peer-checked:bg-secondary/10 peer-checked:text-secondary
+                                border border-base-300 rounded-xl p-4 flex flex-col gap-2 items-center text-center
+                                transition-all hover:border-secondary/40 text-base-content/50 h-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            class="h-7 w-7 stroke-current">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m9 9 10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163Zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553Z" />
+                        </svg>
+                        <span class="font-black text-sm leading-tight">Guess the Song</span>
+                        <span class="text-xs leading-tight opacity-70">Read the lyrics, name the song</span>
+                    </div>
+                </label>
+
+                <a href="{% url 'game:pick_song_lobby' %}"
+                    class="border border-base-300 rounded-xl p-4 flex flex-col gap-2 items-center text-center
+                        transition-all hover:border-accent/40 hover:bg-accent/5 hover:text-accent text-base-content/50 h-full cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        class="h-7 w-7 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" />
+                    </svg>
+                    <span class="font-black text-sm leading-tight">Pick a Song</span>
+                    <span class="text-xs leading-tight opacity-70">Choose a specific song and fill in the missing
+                        lyric</span>
+                </a>
+
+            </div>
         </div>
 
         <form method="POST" class="card bg-base-200 border border-base-300 shadow-xl" id="lobby-form"
             onsubmit="if(this.checkValidity()) { this.querySelector('.submit-spinner').classList.remove('hidden'); this.querySelector('.submit-icon').classList.add('hidden'); }">
             {% csrf_token %}
+
+            <input type="hidden" name="mode" id="mode-hidden" value="complete_lyrics" />
+
             <div class="card-body gap-6">
 
                 <div class="form-control gap-2">
@@ -37,12 +92,11 @@
                         <input type="text" name="artist" id="artist-input"
                             placeholder="e.g. Muse, Lady Gaga, The Beatles..."
                             value="{{ form.artist.value|default:'' }}"
-                            class="input input-bordered w-full  focus:input-primary" autocomplete="off" required />
+                            class="input input-bordered w-full focus:input-primary" autocomplete="off" required />
                     </div>
-                    {% if form.artist.errors %}
-                    <p class="text-error text-xs mt-1">{{ form.artist.errors.0 }}</p>
-                    {% endif %}
                 </div>
+
+                <div class="divider m-0"></div>
 
                 <div class="form-control gap-3">
                     <label class="label pb-1">
@@ -119,6 +173,8 @@
                     </div>
                 </div>
 
+                <div class="divider m-0"></div>
+
                 <div class="form-control gap-2 flex flex-col items-start w-full">
                     <label class="label pb-1 w-full justify-start gap-1">
                         <span class="label-text font-semibold text-base">Number of rounds</span>
@@ -173,5 +229,13 @@
 
     </div>
 </div>
+
+<script>
+    document.querySelectorAll("input[name='mode_select']").forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            document.getElementById("mode-hidden").value = this.value;
+        });
+    });
+</script>
 
 {% endblock %}

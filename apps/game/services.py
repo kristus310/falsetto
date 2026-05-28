@@ -25,6 +25,7 @@ _BASE_SCORE = 100
 _LIVES_BONUS_PER_LIFE = 10
 _STREAK_BONUS_PER_ROUND = 15
 
+
 def calculate_score(difficulty: str, lives: Dict[str, bool], streak: int) -> int:
     multiplier = _DIFFICULTY_MULTIPLIER.get(difficulty, 1.0)
     lives_remaining = sum(1 for v in lives.values() if v)
@@ -32,12 +33,14 @@ def calculate_score(difficulty: str, lives: Dict[str, bool], streak: int) -> int
     streak_bonus = streak * _STREAK_BONUS_PER_ROUND
     return int((_BASE_SCORE + lives_bonus + streak_bonus) * multiplier)
 
+
 def _normalise(text: str) -> str:
     text = unicodedata.normalize("NFD", text)
     text = "".join(c for c in text if unicodedata.category(c) != "Mn")
     text = text.lower()
     text = _PUNCT_RE.sub("", text)
     return " ".join(text.split())
+
 
 def is_correct_guess(guess: str, answer: str) -> bool:
     g = _normalise(guess)
@@ -54,6 +57,7 @@ def is_correct_guess(guess: str, answer: str) -> bool:
     threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
     ratio = SequenceMatcher(None, g, a).ratio()
     return ratio >= threshold
+
 
 class GameService:
     def __init__(self):
@@ -172,9 +176,94 @@ class GameService:
                 "artist": lyrics_res.artist_name or artist,
                 "song": lyrics_res.track_name or track["name"],
                 "lyrics": blanked_lyrics,
-                "answer": answer_word.lower()
+                "answer": answer_word.lower(),
+                "mode": "complete_lyrics",
             }
 
         except Exception as e:
             logger.error(f"Failed to generate game round data for '{artist}': {e}", exc_info=True)
             return None
+
+    def generate_guess_song_data(self, artist: str, difficulty: str) -> Optional[Dict[str, Any]]:
+        try:
+            track = self.lastfm.get_track(artist, difficulty)
+            if not track or "name" not in track:
+                return None
+
+            lyrics_res: Optional[LyricsResult] = self.lrclib.get_lyrics_for_track(track, artist)
+            if not lyrics_res or not lyrics_res.has_lyrics():
+                return None
+
+            excerpt_lines = lyrics_res.random_excerpt(min_lines=3, max_lines=4)
+            if not excerpt_lines:
+                return None
+
+            full_excerpt = "\n".join(excerpt_lines)
+            song_title = lyrics_res.track_name or track["name"]
+
+            return {
+                "artist": lyrics_res.artist_name or artist,
+                "song": song_title,
+                "lyrics": full_excerpt,
+                "answer": song_title.lower(),
+                "mode": "guess_song",
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to generate guess-song round data for '{artist}': {e}", exc_info=True)
+            return None
+
+    def generate_pick_song_data(
+        self,
+        artist: str,
+        song_name: str,
+        used_words: list[str],
+    ) -> Optional[Dict[str, Any]]:
+        try:
+            lyrics_res: Optional[LyricsResult] = self.lrclib.get_lyrics(
+                track_name=song_name,
+                artist_name=artist,
+            )
+            if not lyrics_res or not lyrics_res.has_lyrics():
+                return None
+
+            for _ in range(5):
+                excerpt_lines = lyrics_res.random_excerpt(min_lines=3, max_lines=4)
+                if not excerpt_lines:
+                    continue
+
+                full_excerpt = "\n".join(excerpt_lines)
+
+                words = re.findall(r'\b[a-zA-Z]{4,}\b', full_excerpt)
+                valid_words = [
+                    w for w in words
+                    if w.lower() not in _LYRIC_FILLER_WORDS
+                    and w.lower() not in used_words
+                ]
+
+                if not valid_words:
+                    continue
+
+                answer_word = random.choice(valid_words)
+                pattern = re.compile(r'\b' + re.escape(answer_word) + r'\b', re.IGNORECASE)
+                blanked_lyrics = pattern.sub("________", full_excerpt)
+
+                return {
+                    "artist": lyrics_res.artist_name or artist,
+                    "song": lyrics_res.track_name or song_name,
+                    "lyrics": blanked_lyrics,
+                    "answer": answer_word.lower(),
+                    "mode": "pick_song",
+                }
+
+            return None
+
+        except Exception as e:
+            logger.error(
+                f"Failed to generate pick-song round data for '{artist}' / '{song_name}': {e}",
+                exc_info=True,
+            )
+            return None
+
+    def get_tracks_for_artist(self, artist: str) -> list[dict]:
+        return self.lastfm.get_top_tracks(artist)

@@ -48,9 +48,7 @@
         class="flex flex-col sm:flex-row flex-wrap md:flex-nowrap items-center justify-between px-4 md:px-10 py-4 gap-4 sm:gap-6 md:gap-0 border-b border-base-300 bg-base-200">
 
         <div class="flex items-center justify-center sm:justify-start">
-            <span class="text-base-content/30 text-sm md:text-base font-bold uppercase tracking-widest">
-                Round
-            </span>
+            <span class="text-base-content/30 text-sm md:text-base font-bold uppercase tracking-widest">Round</span>
             <div class="divider divider-horizontal mx-1"></div>
             <span class="text-base-content/30 text-sm md:text-base font-bold uppercase tracking-widest">
                 <span class="text-error/85">{{ current_round }}</span>/<span
@@ -88,13 +86,16 @@
         </div>
     </div>
 
-    <div
-        class="flex flex-wrap items-center justify-between px-4 md:px-10 py-4 gap-4 border-b border-base-300 bg-primary/5">
+    <div class="flex flex-wrap items-center justify-between px-4 md:px-10 py-4 gap-4 border-b border-base-300
+        {% if is_guess_song %}bg-secondary/5{% elif is_pick_song %}bg-accent/5{% else %}bg-primary/5{% endif %}">
+
         <div class="flex items-center gap-3">
             <div class="avatar placeholder hidden sm:flex relative">
-                <div class="absolute inset-0 bg-secondary/20 rounded-full blur animate-pulse"></div>
-                <div
-                    class="bg-gradient-to-tr from-secondary/30 to-secondary/10 text-secondary rounded-full w-12 h-12 border-2 border-secondary/40 flex items-center justify-center shadow-inner relative z-10">
+                <div class="absolute inset-0
+                    {% if is_guess_song %}bg-secondary/20{% elif is_pick_song %}bg-accent/20{% else %}bg-secondary/20{% endif %}
+                    rounded-full blur animate-pulse"></div>
+                <div class="{% if is_guess_song %}bg-gradient-to-tr from-secondary/30 to-secondary/10 text-secondary border-secondary/40{% elif is_pick_song %}bg-gradient-to-tr from-accent/30 to-accent/10 text-accent border-accent/40{% else %}bg-gradient-to-tr from-secondary/30 to-secondary/10 text-secondary border-secondary/40{% endif %}
+                    rounded-full w-12 h-12 border-2 flex items-center justify-center shadow-inner relative z-10">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 animate-spin [animation-duration:8s]"
                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -103,20 +104,29 @@
                 </div>
             </div>
             <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-base-content/30 leading-none mb-1">Artist -
-                    Song</p>
+                <p class="text-xs font-bold uppercase tracking-widest text-base-content/30 leading-none mb-1">
+                    {% if is_guess_song %}Artist{% elif is_pick_song %}Artist — Song{% else %}Artist — Song{% endif %}
+                </p>
                 <p class="text-xl md:text-2xl font-black text-base-content/30 leading-none">
-                    <span class="text-secondary">{{ music.artist }}</span> -
-                    <span class="text-primary">{{ music.song }}</span>
+                    {% if is_guess_song %}
+                    <span class="text-secondary">{{ music.artist }}</span>
+                    <span class="text-base-content/20 ml-1 text-base">— ???</span>
+                    {% else %}
+                    <span
+                        class="{% if is_pick_song %}text-accent{% else %}text-secondary{% endif %}">{{ music.artist }}</span>
+                    <span class="text-base-content/30"> — </span>
+                    <span
+                        class="{% if is_pick_song %}text-accent/70{% else %}text-primary{% endif %}">{{ music.song }}</span>
+                    {% endif %}
                 </p>
             </div>
         </div>
 
         <div class="flex flex-col items-end justify-center">
-            <p class="text-xs font-bold uppercase tracking-widest text-base-content/30 leading-none mb-1.5">
-                Difficulty
-            </p>
-            <div class="badge badge-lg badge-secondary font-bold gap-2 py-3.5">
+            <p class="text-xs font-bold uppercase tracking-widest text-base-content/30 leading-none mb-1.5">Mode</p>
+            <div
+                class="badge badge-lg font-bold gap-2 py-3.5
+                {% if is_guess_song %}badge-secondary{% elif is_pick_song %}badge-accent{% else %}badge-secondary{% endif %}">
                 <span class="relative flex h-3 w-3 items-center justify-center">
                     <span class="absolute inline-flex h-5 w-5 rounded-full bg-success/20 blur-sm"></span>
                     <span
@@ -124,7 +134,9 @@
                     <span
                         class="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
                 </span>
-                {{ difficulty|capfirst }}
+                {% if is_guess_song %}Guess the Song
+                {% elif is_pick_song %}Pick a Song
+                {% else %}{{ difficulty|capfirst }}{% endif %}
             </div>
         </div>
     </div>
@@ -144,10 +156,17 @@
                 class="flex flex-col sm:flex-row w-full gap-3 items-stretch sm:items-center">
                 {% csrf_token %}
 
+                {% if is_guess_song %}
+                {% render_field form.guess class="input input-bordered input-secondary flex-1 w-full font-semibold py-7 sm:py-4 text-xl sm:text-base shadow-inner" id="guess-input" placeholder="Type the song title…" autocomplete="off" autofocus="autofocus" %}
+                {% elif is_pick_song %}
+                {% render_field form.guess class="input input-bordered input-accent flex-1 w-full font-semibold py-7 sm:py-4 text-xl sm:text-base shadow-inner" id="guess-input" placeholder="Type the missing word…" autocomplete="off" autofocus="autofocus" %}
+                {% else %}
                 {% render_field form.guess class="input input-bordered input-primary flex-1 w-full font-semibold py-7 sm:py-4 text-xl sm:text-base shadow-inner" id="guess-input" placeholder="Type the missing word…" autocomplete="off" autofocus="autofocus" %}
+                {% endif %}
 
                 <button type="submit"
-                    class="btn btn-primary w-full sm:w-auto px-8 py-4 sm:py-0 h-auto sm:h-12 flex items-center justify-center gap-2 font-black text-lg sm:text-base shadow-md">
+                    class="btn w-full sm:w-auto px-8 py-4 sm:py-0 h-auto sm:h-12 flex items-center justify-center gap-2 font-black text-lg sm:text-base shadow-md
+                    {% if is_guess_song %}btn-secondary{% elif is_pick_song %}btn-accent{% else %}btn-primary{% endif %}">
                     Guess
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor" stroke-width="2.5">
@@ -163,7 +182,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                     </svg>
+                    {% if is_guess_song %}
+                    <p>Correct! The song was "<span class="underline underline-offset-3">{{ music.song }}</span>".</p>
+                    {% else %}
                     <p>Correct! The word was "<span class="underline underline-offset-3">{{ music.answer }}</span>".</p>
+                    {% endif %}
                 </div>
                 <form hx-post="{% url 'game:game' %}?action=next" hx-target="body" hx-indicator="#loading-overlay">
                     {% csrf_token %}
@@ -183,15 +206,11 @@
 
         <div id="game-feedback" class="w-full">
             {% if form.guess.errors %}
-            <div class="text-error text-center font-bold mt-2">
-                {{ form.guess.errors|first }}
-            </div>
+            <div class="text-error text-center font-bold mt-2">{{ form.guess.errors|first }}</div>
             {% endif %}
             {% if messages %}
             <div class="text-error text-center font-bold mt-2">
-                {% for message in messages %}
-                {{ message }}
-                {% endfor %}
+                {% for message in messages %}{{ message }}{% endfor %}
             </div>
             {% endif %}
         </div>

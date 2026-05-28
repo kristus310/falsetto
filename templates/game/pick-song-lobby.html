@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pick a Song{% endblock %}
+
+{% block content %}
+
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-20">
+    <div class="w-full max-w-xl flex flex-col gap-8">
+
+        <div class="text-center flex flex-col gap-3">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none">
+                Choose your <span class="text-secondary">track</span>
+            </h1>
+            <p class="text-base-content/50 text-sm max-w-xs mx-auto">
+                Search for an artist, pick a song, and we'll quiz you on every line.
+            </p>
+        </div>
+
+        {% if messages %}
+        <div class="alert alert-error">
+            {% for message in messages %}
+            <span>{{ message }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="card bg-base-200 border border-base-300 shadow-xl">
+            <div class="card-body gap-6">
+
+                <div class="form-control gap-2">
+                    <label class="label pb-1">
+                        <span class="label-text font-semibold text-base">Artist or band name</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span
+                                class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/30 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    class="h-5 w-5 stroke-current">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="m9 9 10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163Zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 0 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553Z" />
+                                </svg>
+                            </span>
+                            <input type="text" id="artist-search-input" name="artist"
+                                placeholder="e.g. Muse, Lady Gaga, The Beatles..."
+                                class="input input-bordered w-full focus:input-secondary" autocomplete="off" required />
+                        </div>
+                        <button type="button" id="search-btn" hx-post="{% url 'game:pick_song_lobby' %}"
+                            hx-target="#track-list-container" hx-swap="innerHTML" hx-indicator="#search-spinner"
+                            hx-include="#artist-search-input" hx-vals='{"action": "search_tracks"}'
+                            class="btn btn-secondary gap-2 shrink-0">
+                            <span id="search-spinner" class="loading loading-spinner htmx-indicator hidden"></span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                class="h-5 w-5 stroke-current htmx-indicator-hide">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" />
+                            </svg>
+                            Search
+                        </button>
+                    </div>
+                    <p class="text-xs text-base-content/40 mt-1">
+                        We'll load their song list from Last.fm, first search may take a moment.
+                    </p>
+                </div>
+
+                <div id="track-list-container">
+                </div>
+
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-base-content/30">
+            <a href="{% url 'game:lobby' %}" class="link link-hover">← Back to lobby</a>
+        </p>
+
+    </div>
+</div>
+
+<script>
+    document.getElementById("artist-search-input").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            document.getElementById("search-btn").click();
+        }
+    });
+
+    document.body.addEventListener("htmx:beforeRequest", function () {
+        document.querySelectorAll(".htmx-indicator-hide").forEach(el => el.style.display = "none");
+    });
+    document.body.addEventListener("htmx:afterRequest", function () {
+        document.querySelectorAll(".htmx-indicator-hide").forEach(el => el.style.display = "");
+    });
+</script>
+
+{% endblock %}

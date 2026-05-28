@@ -1,0 +1,162 @@
+{% load static %}
+
+{% if not tracks %}
+{% if artist %}
+<div class="flex flex-col items-center gap-3 py-8 text-center">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-10 w-10 stroke-base-content/30">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M15.182 16.318A4.486 4.486 0 0 0 12.016 15a4.486 4.486 0 0 0-3.198 1.318M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
+    </svg>
+    <p class="text-base-content/50 text-sm font-semibold">No tracks found for "<span
+            class="text-base-content">{{ artist }}</span>".</p>
+    <p class="text-base-content/30 text-xs max-w-xs">Check the spelling or try a different artist name.</p>
+</div>
+{% endif %}
+{% else %}
+
+<div class="divider m-0"></div>
+
+<div class="flex flex-col gap-6 mt-2">
+    <div class="form-control gap-2">
+        <div class="flex items-center justify-between">
+            <p class="text-xs font-bold uppercase tracking-widest text-base-content/40">
+                {{ tracks|length }} track{{ tracks|length|pluralize }} — <span
+                    class="text-secondary">{{ artist }}</span>
+            </p>
+        </div>
+
+        <div class="relative mt-1">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/30 pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-5 w-5 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" />
+                </svg>
+            </span>
+            <input type="text" id="track-filter" placeholder="Filter tracks…"
+                class="input input-bordered w-full pl-11 focus:input-secondary" autocomplete="off"
+                oninput="filterTracks(this.value)" />
+        </div>
+    </div>
+
+    <div class="max-h-64 overflow-y-auto flex flex-col gap-2 pr-1" id="track-list">
+        {% for track in tracks %}
+        <button type="button" class="track-item flex items-center justify-between w-full px-5 py-4 rounded-xl
+                border border-base-300 bg-base-100 hover:border-secondary hover:bg-secondary/5
+                transition-all text-left group" data-track="{{ track.name }}" onclick="selectTrack(this)">
+            <span
+                class="font-semibold text-sm text-base-content group-hover:text-secondary transition-colors truncate pr-3">
+                {{ track.name }}
+            </span>
+            <span class="text-xs text-base-content/30 shrink-0 font-mono tabular-nums">
+                {{ track.playcount|default:0 }}
+                <span class="text-base-content/20">plays</span>
+            </span>
+        </button>
+        {% endfor %}
+    </div>
+</div>
+
+<form method="POST" action="{% url 'game:pick_song_lobby' %}" id="start-form"
+    class="hidden flex-col gap-6 mt-4 pt-6 border-t border-base-300"
+    onsubmit="if(this.checkValidity()) { this.querySelector('.submit-spinner').classList.remove('hidden'); this.querySelector('.submit-icon').classList.add('hidden'); }">
+    {% csrf_token %}
+    <div class="divider m-0"></div>
+
+    <input type="hidden" name="action" value="start_pick_song" />
+    <input type="hidden" name="artist" value="{{ artist }}" />
+    <input type="hidden" name="song" id="selected-song-input" value="" />
+
+    <div class="flex items-center gap-3 justify-between flex-wrap">
+        <div class="flex flex-col gap-1">
+            <p class="text-xs font-bold uppercase tracking-widest text-base-content/40">Selected song</p>
+            <p id="selected-song-display" class="font-black text-base text-secondary truncate max-w-xs"></p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-xs text-base-content/30" onclick="clearSelection()">
+            ✕ Clear
+        </button>
+    </div>
+
+    <div class="form-control gap-2 flex flex-col items-start w-full">
+        <label class="label pb-1 w-full justify-start gap-1">
+            <span class="label-text font-semibold text-base">Number of rounds</span>
+            <span class="label-text-alt text-base-content/40">per game</span>
+        </label>
+        <div class="flex items-center gap-3 self-center">
+            <label class="cursor-pointer">
+                <input type="radio" name="rounds" value="1" class="sr-only peer" />
+                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                            border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                            hover:border-secondary/50 text-base-content/50">1</div>
+            </label>
+            <label class="cursor-pointer">
+                <input type="radio" name="rounds" value="3" class="sr-only peer" checked />
+                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                            border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                            hover:border-secondary/50 text-base-content/50">3</div>
+            </label>
+            <label class="cursor-pointer">
+                <input type="radio" name="rounds" value="5" class="sr-only peer" />
+                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                            border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                            hover:border-secondary/50 text-base-content/50">5</div>
+            </label>
+            <label class="cursor-pointer">
+                <input type="radio" name="rounds" value="10" class="sr-only peer" />
+                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                            border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
+                            hover:border-secondary/50 text-base-content/50">10</div>
+            </label>
+        </div>
+    </div>
+
+    <div class="card-actions pt-2">
+        <button type="submit" class="btn btn-secondary btn-lg w-full gap-3">
+            <span class="loading loading-spinner submit-spinner hidden"></span>
+            <span>Start game</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                class="h-5 w-5 stroke-current shrink-0 submit-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" />
+            </svg>
+        </button>
+    </div>
+</form>
+
+<script>
+    function filterTracks(query) {
+        const q = query.toLowerCase();
+        document.querySelectorAll("#track-list .track-item").forEach(function (btn) {
+            const name = btn.dataset.track.toLowerCase();
+            btn.style.display = name.includes(q) ? "" : "none";
+        });
+    }
+
+    function selectTrack(btn) {
+        document.querySelectorAll("#track-list .track-item").forEach(function (b) {
+            b.classList.remove("border-secondary", "bg-secondary/10", "text-secondary");
+        });
+        btn.classList.add("border-secondary", "bg-secondary/10", "text-secondary");
+
+        const songName = btn.dataset.track;
+        document.getElementById("selected-song-input").value = songName;
+        document.getElementById("selected-song-display").textContent = songName;
+
+        const form = document.getElementById("start-form");
+        form.classList.remove("hidden");
+        form.classList.add("flex");
+        form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function clearSelection() {
+        document.querySelectorAll("#track-list .track-item").forEach(function (b) {
+            b.classList.remove("border-secondary", "bg-secondary/10", "text-secondary");
+        });
+        document.getElementById("selected-song-input").value = "";
+        document.getElementById("selected-song-display").textContent = "";
+        const form = document.getElementById("start-form");
+        form.classList.add("hidden");
+        form.classList.remove("flex");
+    }
+</script>
+
+{% endif %}

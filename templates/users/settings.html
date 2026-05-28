@@ -274,31 +274,31 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
-        const fileInput = document.querySelector('input[type="file"][name="avatar"]');
-        const previewImg = document.getElementById('avatar-preview');
-        const cancelBtn = document.getElementById('cancel-avatar-btn');
-        const removeBtn = document.getElementById('remove-avatar-btn');
+        const fileInput = document.querySelector("input[type='file'][name='avatar']");
+        const previewImg = document.getElementById("avatar-preview");
+        const cancelBtn = document.getElementById("cancel-avatar-btn");
+        const removeBtn = document.getElementById("remove-avatar-btn");
 
         const originalUrl = "{{ user.profile.avatar_url }}";
 
         if (!fileInput || !previewImg) return;
 
-        fileInput.addEventListener('change', () => {
+        fileInput.addEventListener("change", () => {
             const file = fileInput.files[0];
             if (!file) return;
 
             previewImg.src = URL.createObjectURL(file);
 
-            cancelBtn?.classList.remove('hidden');
-            removeBtn?.classList.add('hidden');
+            cancelBtn?.classList.remove("hidden");
+            removeBtn?.classList.add("hidden");
         });
 
-        cancelBtn?.addEventListener('click', () => {
+        cancelBtn?.addEventListener("click", () => {
             fileInput.value = "";
             previewImg.src = originalUrl;
 
-            cancelBtn.classList.add('hidden');
-            removeBtn?.classList.remove('hidden');
+            cancelBtn.classList.add("hidden");
+            removeBtn?.classList.remove("hidden");
         });
     });
 </script>
