@@ -8,10 +8,8 @@ from .services import GameService, is_correct_guess, calculate_score
 from apps.users.models import UserScore
 from core.throttle import rate_limit
 
-
 _VALID_DIFFICULTIES = {"easy", "medium", "hard", "insane"}
 _VALID_MODES = {"complete_lyrics", "guess_song", "pick_song"}
-
 
 def index(request: HttpRequest) -> HttpResponse:
     most_played = "None yet!"
@@ -157,6 +155,8 @@ def game(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and action:
         if action == "quit":
             request.session["game_status"] = "lobby"
+            if game_mode == "pick_song":
+                return redirect("game:pick_song_lobby")
             return redirect("game:lobby")
 
         elif action == "next" and answered:
@@ -188,6 +188,8 @@ def game(request: HttpRequest) -> HttpResponse:
                 f"Could not extract sufficient lyrics for '{artist}'. Try another artist!"
             )
             request.session["game_status"] = "lobby"
+            if game_mode == "pick_song":
+                return redirect("game:pick_song_lobby")
             return redirect("game:lobby")
 
         request.session["music"] = music
@@ -301,6 +303,7 @@ def victory(request: HttpRequest) -> HttpResponse:
             user=request.user,
             artist=artist,
             difficulty=difficulty,
+            game_mode=game_mode,
             score=score,
             correct_count=correct_count,
             total_rounds=total_rounds,
@@ -345,6 +348,7 @@ def game_over(request: HttpRequest) -> HttpResponse:
             user=request.user,
             artist=artist,
             difficulty=difficulty,
+            game_mode=game_mode,
             score=score,
             correct_count=correct_count,
             total_rounds=total_rounds,
@@ -371,12 +375,22 @@ def game_over(request: HttpRequest) -> HttpResponse:
 
 
 def leaderboard(request: HttpRequest) -> HttpResponse:
+    selected_mode = request.GET.get("mode", "complete_lyrics")
+    if selected_mode not in _VALID_MODES:
+        selected_mode = "complete_lyrics"
+
     top_scores = (
-        UserScore.objects.filter(completed=True, user__profile__show_on_leaderboard=True)
+        UserScore.objects.filter(
+            completed=True,
+            game_mode=selected_mode,
+            user__profile__show_on_leaderboard=True
+        )
         .select_related("user")
         .order_by("-score", "-created_at")[:50]
     )
     context = {
         "top_scores": top_scores,
+        "selected_mode": selected_mode,
+        "available_modes": UserScore.GameModes.choices,
     }
     return render(request, "game/leaderboard.html", context)

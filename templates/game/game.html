@@ -105,16 +105,16 @@
             </div>
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-base-content/30 leading-none mb-1">
-                    {% if is_guess_song %}Artist{% elif is_pick_song %}Artist — Song{% else %}Artist — Song{% endif %}
+                    {% if is_guess_song %}Artist{% elif is_pick_song %}Artist - Song{% else %}Artist - Song{% endif %}
                 </p>
                 <p class="text-xl md:text-2xl font-black text-base-content/30 leading-none">
                     {% if is_guess_song %}
                     <span class="text-secondary">{{ music.artist }}</span>
-                    <span class="text-base-content/20 ml-1 text-base">— ???</span>
+                    <span class="text-base-content/20 ml-1 text-base">- ???</span>
                     {% else %}
                     <span
                         class="{% if is_pick_song %}text-accent{% else %}text-secondary{% endif %}">{{ music.artist }}</span>
-                    <span class="text-base-content/30"> — </span>
+                    <span class="text-base-content/30"> - </span>
                     <span
                         class="{% if is_pick_song %}text-accent/70{% else %}text-primary{% endif %}">{{ music.song }}</span>
                     {% endif %}

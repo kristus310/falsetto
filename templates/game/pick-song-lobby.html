@@ -10,7 +10,7 @@
 
         <div class="text-center flex flex-col gap-3">
             <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none">
-                Choose your <span class="text-secondary">track</span>
+                Choose your <span class="text-accent">track</span>
             </h1>
             <p class="text-base-content/50 text-sm max-w-xs mx-auto">
                 Search for an artist, pick a song, and we'll quiz you on every line.
@@ -44,12 +44,12 @@
                             </span>
                             <input type="text" id="artist-search-input" name="artist"
                                 placeholder="e.g. Muse, Lady Gaga, The Beatles..."
-                                class="input input-bordered w-full focus:input-secondary" autocomplete="off" required />
+                                class="input input-bordered w-full focus:input-accent" autocomplete="off" required />
                         </div>
                         <button type="button" id="search-btn" hx-post="{% url 'game:pick_song_lobby' %}"
                             hx-target="#track-list-container" hx-swap="innerHTML" hx-indicator="#search-spinner"
                             hx-include="#artist-search-input" hx-vals='{"action": "search_tracks"}'
-                            class="btn btn-secondary gap-2 shrink-0">
+                            class="btn btn-accent gap-2 shrink-0">
                             <span id="search-spinner" class="loading loading-spinner htmx-indicator hidden"></span>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 class="h-5 w-5 stroke-current htmx-indicator-hide">

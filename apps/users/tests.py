@@ -156,7 +156,7 @@ class UserProfileModelTests(TestCase):
         self.assertFalse(bool(profile.avatar))
 
     def test_str(self):
-        self.assertEqual(str(self.user.profile), "profile@example.com — profile")
+        self.assertEqual(str(self.user.profile), "profile@example.com - profile")
 
     def test_avatar_url_default_when_no_avatar(self):
         self.assertEqual(self.user.profile.avatar_url, "/static/images/user.png")

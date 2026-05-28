@@ -48,7 +48,7 @@ def profile(request: HttpRequest) -> HttpResponse:
 
     best_score_obj = scores_qs.order_by("-score").first()
     best_score_difficulty = (
-        f"pts — {best_score_obj.get_difficulty_display()}" if best_score_obj else None
+        f"pts - {best_score_obj.get_difficulty_display()}" if best_score_obj else None
     )
 
     win_streak, best_streak = _compute_win_streak(scores_qs)

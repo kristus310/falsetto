@@ -20,8 +20,7 @@
     <div class="form-control gap-2">
         <div class="flex items-center justify-between">
             <p class="text-xs font-bold uppercase tracking-widest text-base-content/40">
-                {{ tracks|length }} track{{ tracks|length|pluralize }} — <span
-                    class="text-secondary">{{ artist }}</span>
+                {{ tracks|length }} track{{ tracks|length|pluralize }} - <span class="text-accent">{{ artist }}</span>
             </p>
         </div>
 
@@ -33,7 +32,7 @@
                 </svg>
             </span>
             <input type="text" id="track-filter" placeholder="Filter tracks…"
-                class="input input-bordered w-full pl-11 focus:input-secondary" autocomplete="off"
+                class="input input-bordered w-full pl-11 focus:input-accent" autocomplete="off"
                 oninput="filterTracks(this.value)" />
         </div>
     </div>
@@ -41,10 +40,10 @@
     <div class="max-h-64 overflow-y-auto flex flex-col gap-2 pr-1" id="track-list">
         {% for track in tracks %}
         <button type="button" class="track-item flex items-center justify-between w-full px-5 py-4 rounded-xl
-                border border-base-300 bg-base-100 hover:border-secondary hover:bg-secondary/5
+                border border-base-300 bg-base-100 hover:border-accent hover:bg-accent/5
                 transition-all text-left group" data-track="{{ track.name }}" onclick="selectTrack(this)">
             <span
-                class="font-semibold text-sm text-base-content group-hover:text-secondary transition-colors truncate pr-3">
+                class="font-semibold text-sm text-base-content group-hover:text-accent transition-colors truncate pr-3">
                 {{ track.name }}
             </span>
             <span class="text-xs text-base-content/30 shrink-0 font-mono tabular-nums">
@@ -69,7 +68,7 @@
     <div class="flex items-center gap-3 justify-between flex-wrap">
         <div class="flex flex-col gap-1">
             <p class="text-xs font-bold uppercase tracking-widest text-base-content/40">Selected song</p>
-            <p id="selected-song-display" class="font-black text-base text-secondary truncate max-w-xs"></p>
+            <p id="selected-song-display" class="font-black text-base text-accent truncate max-w-xs"></p>
         </div>
         <button type="button" class="btn btn-ghost btn-xs text-base-content/30" onclick="clearSelection()">
             ✕ Clear
@@ -84,33 +83,33 @@
         <div class="flex items-center gap-3 self-center">
             <label class="cursor-pointer">
                 <input type="radio" name="rounds" value="1" class="sr-only peer" />
-                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                <div class="peer-checked:bg-accent peer-checked:text-accent-content peer-checked:border-accent
                             border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
-                            hover:border-secondary/50 text-base-content/50">1</div>
+                            hover:border-accent/50 text-base-content/50">1</div>
             </label>
             <label class="cursor-pointer">
                 <input type="radio" name="rounds" value="3" class="sr-only peer" checked />
-                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                <div class="peer-checked:bg-accent peer-checked:text-accent-content peer-checked:border-accent
                             border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
-                            hover:border-secondary/50 text-base-content/50">3</div>
+                            hover:border-accent/50 text-base-content/50">3</div>
             </label>
             <label class="cursor-pointer">
                 <input type="radio" name="rounds" value="5" class="sr-only peer" />
-                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                <div class="peer-checked:bg-accent peer-checked:text-accent-content peer-checked:border-accent
                             border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
-                            hover:border-secondary/50 text-base-content/50">5</div>
+                            hover:border-accent/50 text-base-content/50">5</div>
             </label>
             <label class="cursor-pointer">
                 <input type="radio" name="rounds" value="10" class="sr-only peer" />
-                <div class="peer-checked:bg-secondary peer-checked:text-secondary-content peer-checked:border-secondary
+                <div class="peer-checked:bg-accent peer-checked:text-accent-content peer-checked:border-accent
                             border border-base-300 rounded-lg px-4 py-2 text-sm font-bold transition-all
-                            hover:border-secondary/50 text-base-content/50">10</div>
+                            hover:border-accent/50 text-base-content/50">10</div>
             </label>
         </div>
     </div>
 
     <div class="card-actions pt-2">
-        <button type="submit" class="btn btn-secondary btn-lg w-full gap-3">
+        <button type="submit" class="btn btn-accent btn-lg w-full gap-3">
             <span class="loading loading-spinner submit-spinner hidden"></span>
             <span>Start game</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -133,9 +132,9 @@
 
     function selectTrack(btn) {
         document.querySelectorAll("#track-list .track-item").forEach(function (b) {
-            b.classList.remove("border-secondary", "bg-secondary/10", "text-secondary");
+            b.classList.remove("border-accent", "bg-accent/10", "text-accent");
         });
-        btn.classList.add("border-secondary", "bg-secondary/10", "text-secondary");
+        btn.classList.add("border-accent", "bg-accent/10", "text-accent");
 
         const songName = btn.dataset.track;
         document.getElementById("selected-song-input").value = songName;
@@ -149,7 +148,7 @@
 
     function clearSelection() {
         document.querySelectorAll("#track-list .track-item").forEach(function (b) {
-            b.classList.remove("border-secondary", "bg-secondary/10", "text-secondary");
+            b.classList.remove("border-accent", "bg-accent/10", "text-accent");
         });
         document.getElementById("selected-song-input").value = "";
         document.getElementById("selected-song-display").textContent = "";

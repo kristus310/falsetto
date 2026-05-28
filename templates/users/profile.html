@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Profile — {{ user.username }}{% endblock %}
+{% block title %}Profile - {{ user.username }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-base-100 pb-20">
@@ -65,8 +65,8 @@
             </div>
             <div class="stat shadow border border-base-300 rounded-box bg-base-100 p-4 sm:p-6">
                 <div class="stat-title text-xs sm:text-sm truncate">Best Score</div>
-                <div class="stat-value text-xl sm:text-3xl">{{ best_score|default:"—" }}</div>
-                <div class="stat-desc text-[10px] sm:text-xs truncate">{{ best_score_difficulty|default:"—" }}</div>
+                <div class="stat-value text-xl sm:text-3xl">{{ best_score|default:"-" }}</div>
+                <div class="stat-desc text-[10px] sm:text-xs truncate">{{ best_score_difficulty|default:"-" }}</div>
             </div>
             <div class="stat shadow border border-base-300 rounded-box bg-base-100 p-4 sm:p-6">
                 <div class="stat-title text-xs sm:text-sm truncate">Win Streak</div>

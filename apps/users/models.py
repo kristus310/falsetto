@@ -48,7 +48,7 @@ class UserProfile(models.Model):
         return "/static/images/user.png"
 
     def __str__(self):
-        return f"{self.user.email} — profile"
+        return f"{self.user.email} - profile"
 
     def delete_avatar(self):
         if self.avatar:
@@ -62,18 +62,32 @@ def create_or_save_user_profile(sender, instance, created, **kwargs):
     UserProfile.objects.get_or_create(user=instance)
 
 class UserScore(models.Model):
-    DIFFICULTIES = [
-        ("easy", "Easy"),
-        ("medium", "Medium"),
-        ("hard", "Hard"),
-        ("insane", "Insane"),
-    ]
+    class Difficulties(models.TextChoices):
+        EASY = "easy", "Easy"
+        MEDIUM = "medium", "Medium"
+        HARD = "hard", "Hard"
+        INSANE = "insane", "Insane"
+
+    class GameModes(models.TextChoices):
+        COMPLETE_LYRICS = "complete_lyrics", "Complete Lyrics"
+        GUESS_SONG = "guess_song", "Guess Song"
+        PICK_SONG = "pick_song", "Pick Song"
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="scores", null=True, blank=True
     )
     artist = models.CharField(max_length=120)
-    difficulty = models.CharField(max_length=12, choices=DIFFICULTIES, default="medium")
+    difficulty = models.CharField(
+        max_length=12,
+        choices=Difficulties.choices,
+        default=Difficulties.MEDIUM
+    )
+    game_mode = models.CharField(
+        max_length=20,
+        choices=GameModes.choices,
+        default=GameModes.COMPLETE_LYRICS,
+        db_index=True
+    )
     score = models.PositiveIntegerField(default=0)
     correct_count = models.PositiveSmallIntegerField(default=0)
     total_rounds = models.PositiveSmallIntegerField(default=0)
@@ -84,9 +98,12 @@ class UserScore(models.Model):
         verbose_name = "user score"
         verbose_name_plural = "user scores"
         ordering = ["-score", "-created_at"]
+        indexes = [
+            models.Index(fields=["completed", "game_mode", "-score", "-created_at"]),
+        ]
 
     def __str__(self):
-        return f"{self.user} | {self.artist} | {self.difficulty} | {self.score}"
+        return f"{self.user} | {self.artist} | {self.game_mode} | {self.difficulty} | {self.score}"
 
     @property
     def points(self) -> int:
