@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db.models import Sum, Max, Count
 from django.views.decorators.http import require_http_methods
 
+from core.throttle import rate_limit
 from .forms import UsernameForm, EmailForm, DeleteAccountForm, AvatarForm
 from .models import UserProfile
 
@@ -67,6 +68,7 @@ def profile(request: HttpRequest) -> HttpResponse:
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@rate_limit(max_requests=20, window_seconds=60)
 def settings(request: HttpRequest) -> HttpResponse:
     user = request.user
     user_profile, _ = UserProfile.objects.get_or_create(user=user)
@@ -128,6 +130,7 @@ def settings(request: HttpRequest) -> HttpResponse:
 
 @login_required
 @require_http_methods(["POST"])
+@rate_limit(max_requests=10, window_seconds=60)
 def delete_avatar(request):
     request.user.profile.delete_avatar()
     messages.success(request, "Avatar removed.")
@@ -135,6 +138,7 @@ def delete_avatar(request):
 
 @login_required
 @require_http_methods(["POST"])
+@rate_limit(max_requests=5, window_seconds=300)
 def delete_account(request: HttpRequest) -> HttpResponse:
     user = request.user
     form = DeleteAccountForm(request.POST, user=user)

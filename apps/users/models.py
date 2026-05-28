@@ -102,8 +102,10 @@ class UserScore(models.Model):
             models.Index(fields=["completed", "game_mode", "-score", "-created_at"]),
         ]
 
+    DIFFICULTIES = Difficulties.choices
+
     def __str__(self):
-        return f"{self.user} | {self.artist} | {self.game_mode} | {self.difficulty} | {self.score}"
+        return f"{self.user} | {self.artist} | {self.difficulty} | {self.score}"
 
     @property
     def points(self) -> int:

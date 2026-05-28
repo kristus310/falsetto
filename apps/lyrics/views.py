@@ -27,7 +27,8 @@ def fetch(request: HttpRequest, artist_slug: str, difficulty_slug: str) -> HttpR
             return JsonResponse({"error": f"Could not extract a usable excerpt for {track['name']}"}, status=404)
 
     except Exception as e:
-        return JsonResponse({"error": "An internal error occurred during processing", "details": str(e)}, status=500)
+        logger.exception("Lyrics fetch error for artist=%r difficulty=%r: %s", artist, difficulty, e)
+        return JsonResponse({"error": "An internal error occurred during processing."}, status=500)
 
     return JsonResponse({
         "track": {

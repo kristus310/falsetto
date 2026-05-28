@@ -19,7 +19,6 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=["http://localhost", "http://127.0.0.1"])
 
 if not DEBUG:
-    SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
@@ -30,6 +29,17 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+    PERMISSIONS_POLICY = {
+        "geolocation": [],
+        "microphone": [],
+        "camera": [],
+        "payment": [],
+        "usb": [],
+        "interest-cohort": [],
+    }
 
 
 # Application definition
@@ -85,10 +95,11 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 _db_config = env.db("DATABASE_URL", default=f"sqlite:////{BASE_DIR}/db.sqlite3")
 
-if _db_config["ENGINE"].endswith("sqlite3"):
+_IS_SQLITE = _db_config["ENGINE"].endswith("sqlite3")
+
+if _IS_SQLITE:
     _db_config.setdefault("OPTIONS", {})
     _db_config["OPTIONS"]["timeout"] = 20
-    _db_config["OPTIONS"]["init_command"] = "PRAGMA journal_mode=WAL;"
 else:
     _db_config["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)
     _db_config["CONN_HEALTH_CHECKS"] = True
@@ -96,6 +107,16 @@ else:
 DATABASES = {"default": _db_config}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+if _IS_SQLITE:
+    from django.db.backends.signals import connection_created
+
+    def _enable_sqlite_wal(sender, connection, **kwargs):
+        if connection.vendor == "sqlite":
+            connection.cursor().execute("PRAGMA journal_mode=WAL;")
+            connection.cursor().execute("PRAGMA synchronous=NORMAL;")
+
+    connection_created.connect(_enable_sqlite_wal)
 
 
 # Password validation

@@ -23,14 +23,12 @@ _BASE_SCORE = 100
 _LIVES_BONUS_PER_LIFE = 10
 _STREAK_BONUS_PER_ROUND = 15
 
-
 def calculate_score(difficulty: str, lives: Dict[str, bool], streak: int) -> int:
     multiplier = _DIFFICULTY_MULTIPLIER.get(difficulty, 1.0)
     lives_remaining = sum(1 for v in lives.values() if v)
     lives_bonus = lives_remaining * _LIVES_BONUS_PER_LIFE
     streak_bonus = streak * _STREAK_BONUS_PER_ROUND
     return int((_BASE_SCORE + lives_bonus + streak_bonus) * multiplier)
-
 
 def _normalise(text: str) -> str:
     text = unicodedata.normalize("NFD", text)
@@ -39,8 +37,9 @@ def _normalise(text: str) -> str:
     text = _PUNCT_RE.sub("", text)
     return " ".join(text.split())
 
-
 def is_correct_guess(guess: str, answer: str) -> bool:
+    from django.conf import settings
+
     g = _normalise(guess)
     a = _normalise(answer)
 
@@ -52,10 +51,9 @@ def is_correct_guess(guess: str, answer: str) -> bool:
     if (g in a or a in g) and len(g) >= 3 and len(g) >= int(len(a) * 0.7):
         return True
 
-    threshold: float = 0.85
+    threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
     ratio = SequenceMatcher(None, g, a).ratio()
     return ratio >= threshold
-
 
 class GameService:
     def __init__(self):
@@ -73,6 +71,11 @@ class GameService:
         return updated_lives, game_over
 
     def warm_up_cache_async(self, artist: str, difficulty: str) -> None:
+        from django.conf import settings as _settings
+
+        if getattr(_settings, "TESTING", False):
+            return
+
         def _run() -> None:
             try:
                 django_setup_needed = False

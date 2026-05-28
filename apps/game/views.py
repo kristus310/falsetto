@@ -27,9 +27,19 @@ def index(request: HttpRequest) -> HttpResponse:
             most_played = most_played_data["artist"]
             play_count = most_played_data["times_played"]
 
+    top_scores = (
+        UserScore.objects.filter(
+            completed=True,
+            user__profile__show_on_leaderboard=True,
+        )
+        .select_related("user")
+        .order_by("-score", "-created_at")[:5]
+    )
+
     context = {
         "most_played_artist": most_played,
         "play_count": play_count,
+        "top_scores": top_scores,
     }
     return render(request, "game/index.html", context=context)
 
@@ -37,7 +47,7 @@ def index(request: HttpRequest) -> HttpResponse:
 @rate_limit(max_requests=100, window_seconds=60)
 def lobby(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
-        artist = request.POST.get("artist", "").strip().title()
+        artist = request.POST.get("artist", "").strip().title()[:120]
 
         difficulty = request.POST.get("difficulty", "medium")
         if difficulty not in _VALID_DIFFICULTIES:
@@ -94,8 +104,8 @@ def pick_song_lobby(request: HttpRequest) -> HttpResponse:
         })
 
     if request.method == "POST" and request.POST.get("action") == "start_pick_song":
-        artist = request.POST.get("artist", "").strip().title()
-        song = request.POST.get("song", "").strip()
+        artist = request.POST.get("artist", "").strip().title()[:120]
+        song = request.POST.get("song", "").strip()[:200]
 
         try:
             total_rounds = int(request.POST.get("rounds", 5))
@@ -129,6 +139,7 @@ def pick_song_lobby(request: HttpRequest) -> HttpResponse:
     return render(request, "game/pick-song-lobby.html")
 
 
+@rate_limit(max_requests=120, window_seconds=60)
 def game(request: HttpRequest) -> HttpResponse:
     artist = request.session.get("game_artist")
     status = request.session.get("game_status", "lobby")
@@ -151,7 +162,7 @@ def game(request: HttpRequest) -> HttpResponse:
 
     game_service = GameService()
 
-    action = request.POST.get("action") or request.GET.get("action")
+    action = request.POST.get("action")
     if request.method == "POST" and action:
         if action == "quit":
             request.session["game_status"] = "lobby"
@@ -284,6 +295,7 @@ def _wrong_guess_message(game_mode: str) -> str:
     return "Incorrect lyric guess! Try again."
 
 
+@rate_limit(max_requests=30, window_seconds=60)
 def victory(request: HttpRequest) -> HttpResponse:
     if request.session.get("game_status") != "won":
         return redirect("game:lobby")
@@ -329,6 +341,7 @@ def victory(request: HttpRequest) -> HttpResponse:
     return render(request, "game/victory.html", context)
 
 
+@rate_limit(max_requests=30, window_seconds=60)
 def game_over(request: HttpRequest) -> HttpResponse:
     if request.session.get("game_status") != "lost":
         return redirect("game:lobby")

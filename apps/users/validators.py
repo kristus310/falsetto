@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models.fields.files import FieldFile
 from PIL import Image, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 
 def validate_avatar(file):
     if isinstance(file, FieldFile):
@@ -15,6 +16,8 @@ def validate_avatar(file):
         img = Image.open(file)
         img.load()
         file.seek(0)
+    except DecompressionBombError:
+        raise ValidationError("Image is too large to process safely.")
     except UnidentifiedImageError:
         raise ValidationError("Upload a valid image file (JPEG, PNG, or WebP).")
     except Exception:
