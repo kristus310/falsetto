@@ -18,6 +18,8 @@ DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=["http://localhost", "http://127.0.0.1"])
 
+GAME_FUZZY_THRESHOLD = 0.85
+
 if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -31,16 +33,6 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
-
-    PERMISSIONS_POLICY = {
-        "geolocation": [],
-        "microphone": [],
-        "camera": [],
-        "payment": [],
-        "usb": [],
-        "interest-cohort": [],
-    }
-
 
 # Application definition
 

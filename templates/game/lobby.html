@@ -106,7 +106,7 @@
 
                         <label class="cursor-pointer">
                             <input type="radio" name="difficulty" value="easy" class="sr-only peer"
-                                {% if not form.difficulty.value or form.difficulty.value == 'easy' %}checked{% endif %} />
+                                {% if default_difficulty == 'easy' %}checked{% endif %} />
                             <div class="peer-checked:border-info peer-checked:bg-info/10 peer-checked:text-info
                                         border border-info/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
                                         transition-all hover:border-info/50 text-base-content/50">
@@ -122,7 +122,7 @@
 
                         <label class="cursor-pointer">
                             <input type="radio" name="difficulty" value="medium" class="sr-only peer"
-                                {% if form.difficulty.value == 'medium' %}checked{% endif %} />
+                                {% if default_difficulty == 'medium' %}checked{% endif %} />
                             <div class="peer-checked:border-success peer-checked:bg-success/10 peer-checked:text-success
                                         border border-success/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
                                         transition-all hover:border-success/50 text-base-content/50">
@@ -138,7 +138,7 @@
 
                         <label class="cursor-pointer">
                             <input type="radio" name="difficulty" value="hard" class="sr-only peer"
-                                {% if form.difficulty.value == 'hard' %}checked{% endif %} />
+                                {% if default_difficulty == 'hard' %}checked{% endif %} />
                             <div class="peer-checked:border-warning peer-checked:bg-warning/10 peer-checked:text-warning
                                         border border-warning/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
                                         transition-all hover:border-warning/50 text-base-content/50">
@@ -156,7 +156,7 @@
 
                         <label class="cursor-pointer">
                             <input type="radio" name="difficulty" value="insane" class="sr-only peer"
-                                {% if form.difficulty.value == 'insane' %}checked{% endif %} />
+                                {% if default_difficulty == 'insane' %}checked{% endif %} />
                             <div class="peer-checked:border-error peer-checked:bg-error/10 peer-checked:text-error
                                         border border-error/50 rounded-xl p-4 flex flex-col gap-1 items-center text-center
                                         transition-all hover:border-error/50 text-base-content/50">
@@ -182,25 +182,29 @@
                     </label>
                     <div class="flex items-center gap-3 self-center">
                         <label class="cursor-pointer">
-                            <input type="radio" name="rounds" value="1" class="sr-only peer" />
+                            <input type="radio" name="rounds" value="1" class="sr-only peer"
+                                {% if default_rounds == 1 %}checked{% endif %} />
                             <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
                                         border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
                                         hover:border-primary/50 text-base-content/50">1</div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="rounds" value="3" class="sr-only peer" checked />
+                            <input type="radio" name="rounds" value="3" class="sr-only peer"
+                                {% if default_rounds == 3 %}checked{% endif %} />
                             <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
                                         border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
                                         hover:border-primary/50 text-base-content/50">3</div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="rounds" value="5" class="sr-only peer" />
+                            <input type="radio" name="rounds" value="5" class="sr-only peer"
+                                {% if default_rounds == 5 %}checked{% endif %} />
                             <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
                                         border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
                                         hover:border-primary/50 text-base-content/50">5</div>
                         </label>
                         <label class="cursor-pointer">
-                            <input type="radio" name="rounds" value="10" class="sr-only peer" />
+                            <input type="radio" name="rounds" value="10" class="sr-only peer"
+                                {% if default_rounds == 10 %}checked{% endif %} />
                             <div class="peer-checked:bg-primary peer-checked:text-primary-content peer-checked:border-primary
                                         border border-secondary/50 rounded-lg px-4 py-2 text-sm font-bold transition-all
                                         hover:border-primary/50 text-base-content/50">10</div>

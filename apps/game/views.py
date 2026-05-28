@@ -85,7 +85,20 @@ def lobby(request: HttpRequest) -> HttpResponse:
         GameService().warm_up_cache_async(artist, difficulty)
 
         return redirect("game:game")
-    return render(request, "game/lobby.html")
+
+    default_difficulty = "medium"
+    default_rounds = 3
+    if request.user.is_authenticated:
+        try:
+            default_difficulty = request.user.profile.default_difficulty
+            default_rounds = request.user.profile.default_rounds
+        except Exception:
+            pass
+
+    return render(request, "game/lobby.html", {
+        "default_difficulty": default_difficulty,
+        "default_rounds": default_rounds,
+    })
 
 
 @rate_limit(max_requests=100, window_seconds=60)
@@ -161,21 +174,86 @@ def game(request: HttpRequest) -> HttpResponse:
         return redirect("game:victory")
 
     game_service = GameService()
+    form = LyricsGuessForm()
 
-    action = request.POST.get("action")
-    if request.method == "POST" and action:
-        if action == "quit":
-            request.session["game_status"] = "lobby"
-            if game_mode == "pick_song":
-                return redirect("game:pick_song_lobby")
-            return redirect("game:lobby")
+    if request.method == "POST":
+        action = request.POST.get("action") or request.GET.get("action")
 
-        elif action == "next" and answered:
-            request.session["current_round"] = current_round + 1
-            request.session["music"] = None
-            request.session["answered"] = False
-            request.session.modified = True
-            return redirect("game:game")
+        if action:
+            if action == "quit":
+                request.session["game_status"] = "lobby"
+                if game_mode == "pick_song":
+                    return redirect("game:pick_song_lobby")
+                return redirect("game:lobby")
+
+            elif action == "next" and answered:
+                request.session["current_round"] = current_round + 1
+                request.session["music"] = None
+                request.session["answered"] = False
+                request.session.modified = True
+                return redirect("game:game")
+
+        else:
+            form = LyricsGuessForm(request.POST)
+            if form.is_valid():
+                guess = form.cleaned_data["guess"].strip()
+                correct_answer = music["answer"]
+
+                if is_correct_guess(guess, correct_answer):
+                    request.session["answered"] = True
+                    answered = True
+                    request.session["correct_count"] = request.session.get("correct_count", 0) + 1
+
+                    streak = request.session.get("streak", 0) + 1
+                    request.session["streak"] = streak
+                    round_score = calculate_score(difficulty, lives, streak)
+                    request.session["score"] = request.session.get("score", 0) + round_score
+
+                    if game_mode == "pick_song":
+                        used = request.session.get("pick_song_used_words", [])
+                        used.append(correct_answer)
+                        request.session["pick_song_used_words"] = used
+
+                    summary = request.session.get("round_summary", [])
+                    summary.append({
+                        "artist": music["artist"],
+                        "song": music["song"],
+                        "answer": music["answer"],
+                        "correct": True,
+                        "round_score": round_score,
+                        "mode": game_mode,
+                    })
+                    request.session["round_summary"] = summary
+                    request.session.modified = True
+
+                    if game_mode != "pick_song":
+                        game_service.warm_up_cache_async(artist, difficulty)
+                else:
+                    request.session["streak"] = 0
+                    lives, is_dead = game_service.remove_live(lives)
+                    request.session["lives"] = lives
+                    request.session.modified = True
+
+                    if is_dead:
+                        summary = request.session.get("round_summary", [])
+                        summary.append({
+                            "artist": music["artist"],
+                            "song": music["song"],
+                            "answer": music["answer"],
+                            "correct": False,
+                            "mode": game_mode,
+                        })
+                        request.session["round_summary"] = summary
+                        request.session["game_status"] = "lost"
+                        request.session.modified = True
+                        return redirect("game:game_over")
+
+                    if game_mode != "pick_song":
+                        game_service.warm_up_cache_async(artist, difficulty)
+
+                    messages.error(request, _wrong_guess_message(game_mode))
+    else:
+        form = LyricsGuessForm()
 
     if not music:
         attempts = 0
@@ -207,68 +285,6 @@ def game(request: HttpRequest) -> HttpResponse:
         request.session["answered"] = False
         answered = False
         request.session.modified = True
-
-    if request.method == "POST" and not action:
-        form = LyricsGuessForm(request.POST)
-        if form.is_valid():
-            guess = form.cleaned_data["guess"].strip()
-            correct_answer = music["answer"]
-
-            if is_correct_guess(guess, correct_answer):
-                request.session["answered"] = True
-                answered = True
-                request.session["correct_count"] = request.session.get("correct_count", 0) + 1
-
-                streak = request.session.get("streak", 0) + 1
-                request.session["streak"] = streak
-                round_score = calculate_score(difficulty, lives, streak)
-                request.session["score"] = request.session.get("score", 0) + round_score
-
-                if game_mode == "pick_song":
-                    used = request.session.get("pick_song_used_words", [])
-                    used.append(correct_answer)
-                    request.session["pick_song_used_words"] = used
-
-                summary = request.session.get("round_summary", [])
-                summary.append({
-                    "artist": music["artist"],
-                    "song": music["song"],
-                    "answer": music["answer"],
-                    "correct": True,
-                    "round_score": round_score,
-                    "mode": game_mode,
-                })
-                request.session["round_summary"] = summary
-                request.session.modified = True
-
-                if game_mode != "pick_song":
-                    game_service.warm_up_cache_async(artist, difficulty)
-            else:
-                request.session["streak"] = 0
-                lives, is_dead = game_service.remove_live(lives)
-                request.session["lives"] = lives
-                request.session.modified = True
-
-                if is_dead:
-                    summary = request.session.get("round_summary", [])
-                    summary.append({
-                        "artist": music["artist"],
-                        "song": music["song"],
-                        "answer": music["answer"],
-                        "correct": False,
-                        "mode": game_mode,
-                    })
-                    request.session["round_summary"] = summary
-                    request.session["game_status"] = "lost"
-                    request.session.modified = True
-                    return redirect("game:game_over")
-
-                if game_mode != "pick_song":
-                    game_service.warm_up_cache_async(artist, difficulty)
-
-                messages.error(request, _wrong_guess_message(game_mode))
-    else:
-        form = LyricsGuessForm()
 
     context = {
         "answered": answered,

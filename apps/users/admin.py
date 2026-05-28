@@ -25,7 +25,7 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ["user", "show_on_leaderboard", "email_notifications"]
+    list_display = ["user", "show_on_leaderboard", "default_difficulty", "default_rounds"]
     search_fields = ["user__email", "user__username"]
 
 @admin.register(UserScore)

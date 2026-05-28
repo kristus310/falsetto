@@ -1,198 +1,155 @@
 # Falsetto
 
-Falsetto is a fast-paced web game that tests your music knowledge by challenging you to fill in the blanks of your favorite songs. You name the artist, choose the difficulty, and see if you can guess the missing word from a curated lyric snippet.
+Falsetto is a music trivia game. Pick an artist, pick a mode, and see how well you actually know their songs — not just the hits.
 
-Built with a lightweight and modern Django stack, the game uses live external API integrations, an intelligent lyric-extraction engine, and a stateful in-memory game loop to keep matches quick, unpredictable, and highly responsive.
+There are three ways to play. In **Complete the Lyrics**, the game shows you a verse with one word missing and you fill it in. In **Guess the Song**, you get a full verse with nothing hidden and have to name the track. In **Pick a Song**, you choose a specific song from an artist's catalog and the game quizzes you on it across multiple rounds, pulling a different blank each time.
+
+It runs in the browser, no install needed. Accounts are optional — you only need one if you want your scores saved to the leaderboard.
 
 ---
 
-## The Visual Tour
+## Screenshots
 
-Here is a quick look at the gameplay experience:
-
-### 1. The Landing Page
-*Welcome players with global stats, high scores, and quick navigation.*
+### Landing Page
 ![Falsetto Landing Page](assets/screenshots/landing.png)
 
-### 2. The Game Lobby
-*Configure your session with any artist, multiple difficulty tiers, and custom round counts.*
+### Lobby
 ![Lobby Setup Screen](assets/screenshots/lobby.png)
 
-### 3. Active Gameplay
-*A beautiful, minimalist interface that focuses entirely on the lyrics, powered by smooth asynchronous round transitions.*
+### Gameplay
 ![Active Gameplay Screen](assets/screenshots/gameplay.png)
 
-### 4. Victory or Defeat
-*Get a breakdown of your score, view a round-by-round summary of the tracks played, and claim your spot on the leaderboard.*
+### End Screen
 ![Victory Screen](assets/screenshots/victory.png)
 
 ---
 
-## How the Game Works
+## How a round works
 
-Falsetto is designed to be simple to pick up, but challenging to master. Here is the lifecycle of a single match:
+1. Pick an artist and a mode. For Complete the Lyrics and Guess the Song, also pick a difficulty and how many rounds you want. For Pick a Song, search the artist's catalog and select a track.
+2. A lyric snippet appears — either with a word blanked out, or in full depending on the mode.
+3. Type your answer and submit. Correct guesses score points and build your streak. Wrong guesses cost a life — you get three per game.
+4. The game ends when you finish all rounds or run out of lives. Scores are saved to the leaderboard if you're logged in.
 
-1. **Setup the Lobby**: Enter any artist or band name. Select your difficulty level (**Easy**, **Medium**, **Hard**, or **Insane**) and decide how many rounds you want to play (1, 3, 5, or 10).
-2. **The Lyric Snippet**: The game pulls a popular track from your chosen artist and extracts a high-quality 3-to-4 line verse. A single, meaningful word is masked with a blank (`________`).
-3. **The Guess**: Type your guess in the input box.
-   * **Correct Guess**: You score points and advance your winning streak.
-   * **Incorrect Guess**: You lose one of your **3 lives**.
-4. **Endgame**: The match ends when you successfully complete all rounds (**Victory!**) or lose all three lives (**Game Over**). If you are logged in, your score is compiled and saved to the global leaderboard.
+That's it.
 
 ---
 
-## Under the Hood: Technical Architecture
-
-Behind the clean user interface is a sophisticated coordination of external APIs, caching systems, and text-processing algorithms.
-
-```mermaid
-graph TD
-    User([Player]) -->|1. Enters Artist & Difficulty| Lobby[Lobby View]
-    Lobby -->|2. Queries Catalog| LastFM[Last.fm API]
-    LastFM -->|3. Deduplicates & Caches| DB[(SQLite Database)]
-    DB -->|4. Pulls Selected Track| LyricEngine[Lyric Engine]
-    LyricEngine -->|5. Fetches Lyrics| LRCLIB[LRCLIB API]
-    LRCLIB -->|6. Excerpt & Scored| Excerpt[Snippet & Missing Word Generator]
-    Excerpt -->|7. Sends Clean Prompt| GameLoop[Stateful Game View]
-    GameLoop -->|8. HTMX Guess Submission| FuzzyMatch[Fuzzy Guess Matcher]
-    FuzzyMatch -->|9. Correct / Lose Life| GameLoop
-```
-
-### 1. Sourcing and Cleaning the Catalog (Last.fm API)
-When you search for an artist, the game queries the **Last.fm API** to pull their catalog. To make the pools fair and accurate, the system runs a custom deduplication pipeline:
-* **Deduplication**: Filters out duplicate recordings, remixes, live tracks, and instrumentals by normalising song titles.
-* **Volume Control**: Groups tracks into popularity tiers based on their real-world play counts.
-* **Local Caching**: The artist's catalog is fully cached in the local database to speed up subsequent matches and limit external API queries.
-
-### 2. Sourcing and Curating the Snippets (LRCLIB API)
-Once a track is chosen, the engine connects to **LRCLIB** to fetch plain-text, unsynced lyrics. However, raw lyrics are often messy. The game's lyric engine runs a validation sweep to ensure a high-quality gameplay prompt:
-* **Substance Scoring**: Blocks of lyrics are scored based on the density of meaningful words vs. generic filler.
-* **Noise Removal**: Automatically strips brackets, formatting tags, section headers (e.g., `[Chorus]`, `[Verse 1]`), and redundant whitespace.
-* **Anti-Spoilers**: The algorithm automatically discards any snippet that contains the song title in the lines, preventing dead giveaways.
-* **Filler Filtering**: When masking a word, the game ignores common filler words (like *"yeah"*, *"oh"*, *"the"*, *"and"*) and only selects words with 4+ letters to ensure the blank requires genuine song knowledge.
-
-### 3. Dynamic Difficulty Tiers
-Rather than picking random songs, the difficulty levels correspond directly to the artist's real-world popularity distribution:
-* **Easy**: Selects strictly from the artist's top **20%** most popular hits.
-* **Medium**: Blends mid-tier favorites and signature tracks (**20% to 55%** of their catalog).
-* **Hard**: Dives deeper into lesser-known tracks and b-sides (**55%+** of their catalog).
-* **Insane**: Pulls exclusively from deep cuts and hidden gems (**75%+** of their catalog) with zero safety nets.
-
-### 4. Stateful Session Management
-To ensure lightning-fast gameplay, active matches do not write round-by-round state to the database. Instead, **Django's session engine** manages your active lobby, round index, current streak, lives remaining, and score in server-side memory. High scores are only written to the database once a match is completed.
-
-### 5. Smart Fuzzy Matching
-A music game shouldn't penalize you for minor typos or missing accents. The guess evaluation engine uses a lenient, multi-layered matching filter:
-* **Unicode Normalization**: Accents and special characters are stripped (e.g., matching *"cafe"* to *"café"*).
-* **Sanitization**: Strips all punctuation, trailing spaces, and converts input to lowercase.
-* **Sequence Alignment**: Runs a character-level similarity calculation (`difflib.SequenceMatcher`). If your guess is at least **85%** similar to the answer, the game awards a correct match.
-
-### 6. Dynamic Scoring Formula
-Your score per round is calculated based on difficulty, surviving lives, and active streaks:
+## Scoring
 
 $$\text{Score} = (\text{Base Score} + \text{Lives Bonus} + \text{Streak Bonus}) \times \text{Difficulty Multiplier}$$
 
-* **Base Score**: 100 points
-* **Lives Bonus**: +10 points for each surviving life
-* **Streak Bonus**: +15 points for each consecutive correct guess in your streak
-* **Multipliers**: Easy (1.0x), Medium (1.5x), Hard (2.5x), Insane (4.0x)
+* **Base Score**: 100 points per round
+* **Lives Bonus**: +10 for each life still standing
+* **Streak Bonus**: +15 for each consecutive correct answer
+* **Multipliers**: Easy ×1.0 — Medium ×1.5 — Hard ×2.5 — Insane ×4.0
+
+---
+
+## Under the Hood
+
+This section is for developers. Skip it if you just want to play.
+
+### How songs are picked
+
+Searching for an artist hits the **Last.fm API** and pulls their full catalog. The response gets deduplicated — live versions, remixes, and re-recordings are collapsed into their canonical track — and sorted by play count. That sorted list is what the difficulty tiers cut into:
+
+* **Easy** — top 20% by play count
+* **Medium** — 20–55%
+* **Hard** — 55%+
+* **Insane** — 75%+
+
+The catalog is cached locally after the first fetch so repeat searches are instant and don't burn API quota.
+
+### How lyrics are processed
+
+Once a track is picked, **LRCLIB** returns the plain-text lyrics. Before anything reaches the player, the engine runs a few passes over the text: section headers like `[Chorus]` are stripped, blocks are scored by how many meaningful words they contain (filler words don't count), and any block that contains the song title is thrown out to prevent accidental giveaways. The highest-scoring block is picked as the excerpt.
+
+For Complete the Lyrics and Pick a Song, a word is then chosen from that block — at least 4 letters, not a filler word, and in Pick a Song mode, not a word that's already been used in a previous round of the same session.
+
+### Fuzzy matching
+
+Typos and missing accents shouldn't cost you a life. The guess checker normalises both the guess and the answer — strips accents, punctuation, and casing — then runs a `difflib.SequenceMatcher` comparison. 85% similarity passes by default. You can override this with `GAME_FUZZY_THRESHOLD` in your `.env`.
+
+### Sessions
+
+Game state — current round, lives, score, streak, mode — lives in Django's server-side session for the duration of a match. Nothing is written to the database mid-game. The score record is created once, on the victory or game-over screen.
+
+---
+
+## Architecture
+
+```mermaid
+graph TD
+    User([Player]) -->|Selects mode, artist, difficulty| Lobby[Lobby]
+    Lobby -->|Queries catalog| LastFM[Last.fm API]
+    LastFM -->|Deduplicates and caches| DB[(SQLite)]
+    DB -->|Pulls track| LyricEngine[Lyric Engine]
+    LyricEngine -->|Fetches lyrics| LRCLIB[LRCLIB API]
+    LRCLIB -->|Scores and excerpts| Generator[Snippet Generator]
+    Generator -->|Sends round data| GameLoop[Game View]
+    GameLoop -->|HTMX submission| FuzzyMatch[Fuzzy Matcher]
+    FuzzyMatch -->|Correct / lose life| GameLoop
+```
 
 ---
 
 ## Tech Stack
 
-Falsetto is built with a modern, high-performance web stack:
-
-* **Backend**: Python 3.13 & Django 6
-* **Frontend Interactivity**: **HTMX** (handles asynchronous, partial page updates for gameplay loops and screen transitions without full browser refreshes)
-* **Styling & UI**: **Tailwind CSS** & **daisyUI** (providing responsive, modern components and a fluid dark/light theme switch)
-* **User Management**: **Django-Allauth** (complete with custom profiles, avatar cropping/uploading, and settings)
-* **Dependency & Tooling**: **uv** (lightning-fast package manager) & **mise** (runtime version manager)
+* **Backend** — Python 3.13, Django 6
+* **Frontend** — HTMX for partial page updates, Tailwind CSS and daisyUI for styling
+* **Auth** — django-allauth with custom user model, profile avatars, and account settings
+* **Serving** — WhiteNoise for static files, Gunicorn for production
+* **Tooling** — uv for dependency management, mise for runtime versions
 
 ---
 
 ## Project Structure
 
-For developers looking at the code, the project is organized into clean, isolated Django apps:
-
 ```
-├── apps/
-│   ├── game/          # Coordinates game loops, scoring formulas, and lobby settings.
-│   ├── lyrics/        # Manages Last.fm & LRCLIB integrations, caching, and excerpt extraction.
-│   ├── pages/         # Static content (About, FAQ, Contact, legal terms, and theme toggling).
-│   └── users/         # Handles custom user accounts, profile settings, and leaderboard stats.
-├── assets/            # Tailwind CSS source files, styling inputs, and static assets.
-├── core/              # Core Django settings, URL routing, and WSGI/ASGI configurations.
-├── templates/         # Modular HTML templates, segmented by app context.
-├── Makefile           # Simple, single-word terminal commands to manage the project.
-├── pyproject.toml     # Modern packaging configurations managed by uv.
-└── mise.toml          # Toolchain manager to keep development environments consistent.
+apps/
+  game/      — game loop, all three modes, scoring, session management
+  lyrics/    — Last.fm and LRCLIB integrations, local caching, excerpt engine
+  pages/     — static pages, theme toggling, SEO
+  users/     — custom user model, profiles, leaderboard
+
+assets/      — Tailwind source, static images
+core/        — settings, URLs, WSGI
+templates/   — HTML templates organised by app
 ```
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-Make sure you have **mise** and **uv** installed on your system.
+You need **mise** and **uv** on your machine before anything else.
 
-### 1. Environment Configuration
-Create a `.env` file in the root of the project:
 ```bash
-# Security & Debugging
-DEBUG=True
-SECRET_KEY=your-django-secret-key
-
-# Database (Default is SQLite)
-DATABASE_URL=sqlite:///db.sqlite3
-
-# External APIs
-LASTFM_API_KEY=your_lastfm_api_key
-LASTFM_BASE_URL=https://ws.audioscrobbler.com/2.0/
+make install     # sets up Python, installs dependencies, builds CSS
+make migrate     # creates the database
+make superuser   # creates an admin account
+make run         # starts the dev server at http://127.0.0.1:8000
 ```
 
-> **Note**: You will need a free API key from [Last.fm's Developer API portal](https://www.last.fm/api) to fetch track catalogs. LRCLIB searches are open and do not require credentials.
+To watch for CSS changes while developing:
 
-### 2. Automated Installation
-Run the installer target to set up your Python version, sync all dependencies, and initialize the Tailwind styling engine:
-```bash
-make install
-```
-
-### 3. Database Initialization & Admin Setup
-Create your local database tables and spin up an administrator account to access the Django backend:
-```bash
-make migrate
-make superuser
-```
-
-### 4. Running the Development Server
-Run the local server:
-```bash
-make run
-```
-Your server will start at `http://127.0.0.1:8000`.
-
-To edit styles, you can run the Tailwind watch process in a separate terminal window:
 ```bash
 make tailwind-watch
 ```
 
 ---
 
-## Everyday Development Commands
+## All Commands
 
-Use the `Makefile` shortcuts to speed up your daily workflows:
-
-| Command | Description |
+| Command | What it does |
 | :--- | :--- |
-| `make install` | Setup the Python toolchain, install dependencies, and build static assets. |
-| `make run` | Starts the local Django server with Tailwind compiled on the fly. |
-| `make tailwind-watch` | Automatically monitors template changes and live-recompiles Tailwind utility classes. |
-| `make test` | Executes the comprehensive test suite across all application modules. |
-| `make migrations` | Detects changes in models and prepares database migration files. |
-| `make migrate` | Applies pending migrations to the local database. |
-| `make superuser` | Creates an administrator login for `/admin`. |
-| `make build` | Builds minified Tailwind styles and compiles static assets for production deployment. |
-| `make clean` | Removes local Python cache files, test artifacts, and temporary builds. |
-| `make serve` | Runs a production-ready WSGI server bound using Gunicorn. |
+| `make install` | Full setup — Python toolchain, dependencies, static assets |
+| `make run` | Dev server with Tailwind |
+| `make tailwind-watch` | Recompiles CSS on template changes |
+| `make test` | Runs the test suite |
+| `make migrations` | Generates migration files from model changes |
+| `make migrate` | Applies migrations |
+| `make superuser` | Creates a Django admin account |
+| `make build` | Production build — minified CSS, collected static files |
+| `make clean` | Removes cache files and build artifacts |
+| `make serve` | Starts Gunicorn |

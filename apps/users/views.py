@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -5,6 +6,7 @@ from django.contrib.auth import logout
 from django.contrib import messages
 from django.db.models import Sum, Max, Count
 from django.views.decorators.http import require_http_methods
+from django.conf import settings as django_settings
 
 from core.throttle import rate_limit
 from .forms import UsernameForm, EmailForm, DeleteAccountForm, AvatarForm
@@ -89,8 +91,6 @@ def settings(request: HttpRequest) -> HttpResponse:
                     avatar_form.save()
 
                     if old_avatar:
-                        import os
-                        from django.conf import settings as django_settings
                         old_path = django_settings.MEDIA_ROOT / old_avatar
                         if old_path.is_file():
                             os.remove(old_path)
@@ -112,13 +112,23 @@ def settings(request: HttpRequest) -> HttpResponse:
             messages.error(request, "Please fix the errors below.")
 
         elif action == "preferences":
+            difficulty = request.POST.get("default_difficulty", "medium")
+            if difficulty not in {"easy", "medium", "hard", "insane"}:
+                difficulty = "medium"
+            try:
+                rounds = int(request.POST.get("default_rounds", 3))
+                rounds = max(1, min(rounds, 20))
+            except ValueError:
+                rounds = 3
+
             user_profile.show_on_leaderboard = "show_on_leaderboard" in request.POST
-            user_profile.email_notifications = "email_notifications" in request.POST
+            user_profile.default_difficulty = difficulty
+            user_profile.default_rounds = rounds
             user_profile.save(update_fields=[
-                "show_on_leaderboard", "email_notifications"
+                "show_on_leaderboard",
+                "default_difficulty",
+                "default_rounds",
             ])
-            messages.success(request, "Preferences saved.")
-            return redirect("users:settings")
 
     context = {
         "username_form": username_form,

@@ -152,7 +152,8 @@ class UserProfileModelTests(TestCase):
     def test_profile_defaults(self):
         profile = self.user.profile
         self.assertTrue(profile.show_on_leaderboard)
-        self.assertTrue(profile.email_notifications)
+        self.assertTrue(self.user.profile.default_difficulty)
+        self.assertTrue(self.user.profile.default_rounds)
         self.assertFalse(bool(profile.avatar))
 
     def test_str(self):
@@ -737,36 +738,6 @@ class SettingsViewTests(TestCase):
             "email": "taken@example.com",
         })
         self.assertEqual(response.status_code, 200)
-
-    def test_preferences_both_on(self):
-        self.client.force_login(self.user)
-        response = self.client.post(self.url, {
-            "action": "preferences",
-            "show_on_leaderboard": "on",
-            "email_notifications": "on",
-        })
-        self.assertRedirects(response, self.url)
-        self.user.profile.refresh_from_db()
-        self.assertTrue(self.user.profile.show_on_leaderboard)
-        self.assertTrue(self.user.profile.email_notifications)
-
-    def test_preferences_both_off(self):
-        self.client.force_login(self.user)
-        response = self.client.post(self.url, {"action": "preferences"})
-        self.assertRedirects(response, self.url)
-        self.user.profile.refresh_from_db()
-        self.assertFalse(self.user.profile.show_on_leaderboard)
-        self.assertFalse(self.user.profile.email_notifications)
-
-    def test_preferences_mixed(self):
-        self.client.force_login(self.user)
-        self.client.post(self.url, {
-            "action": "preferences",
-            "email_notifications": "on",
-        })
-        self.user.profile.refresh_from_db()
-        self.assertFalse(self.user.profile.show_on_leaderboard)
-        self.assertTrue(self.user.profile.email_notifications)
 
     def test_no_file_selected_shows_error(self):
         self.client.force_login(self.user)

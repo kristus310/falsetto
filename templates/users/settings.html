@@ -193,14 +193,35 @@
                             {% if user.profile.show_on_leaderboard %}checked{% endif %} />
                     </div>
 
-
-                    <div class="flex items-center justify-between py-4 gap-6">
+                    <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
                         <div>
-                            <p class="font-semibold text-sm">Email notifications</p>
-                            <p class="text-xs text-base-content/40 mt-0.5">Receive a weekly score digest</p>
+                            <p class="font-semibold text-sm">Default difficulty</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">Pre-selected in the lobby every time you play
+                            </p>
                         </div>
-                        <input type="checkbox" name="email_notifications" class="toggle toggle-accent shrink-0"
-                            {% if user.profile.email_notifications %}checked{% endif %} />
+                        <select name="default_difficulty" class="select select-bordered select-sm w-36 font-bold">
+                            <option value="easy"
+                                {% if user.profile.default_difficulty == "easy"   %}selected{% endif %}>Easy</option>
+                            <option value="medium"
+                                {% if user.profile.default_difficulty == "medium" %}selected{% endif %}>Medium</option>
+                            <option value="hard"
+                                {% if user.profile.default_difficulty == "hard"   %}selected{% endif %}>Hard</option>
+                            <option value="insane"
+                                {% if user.profile.default_difficulty == "insane" %}selected{% endif %}>Insane</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
+                        <div>
+                            <p class="font-semibold text-sm">Default rounds</p>
+                            <p class="text-xs text-base-content/40 mt-0.5">How many rounds the lobby starts at</p>
+                        </div>
+                        <select name="default_rounds" class="select select-bordered select-sm w-36 font-bold">
+                            <option value="1" {% if user.profile.default_rounds == 1  %}selected{% endif %}>1</option>
+                            <option value="3" {% if user.profile.default_rounds == 3  %}selected{% endif %}>3</option>
+                            <option value="5" {% if user.profile.default_rounds == 5  %}selected{% endif %}>5</option>
+                            <option value="10" {% if user.profile.default_rounds == 10 %}selected{% endif %}>10</option>
+                        </select>
                     </div>
 
                     <div class="flex justify-end pt-4 border-t border-base-300 mt-2">

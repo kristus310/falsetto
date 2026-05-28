@@ -39,7 +39,12 @@ class UserProfile(models.Model):
         validators=[validate_avatar],
     )
     show_on_leaderboard = models.BooleanField(default=True)
-    email_notifications = models.BooleanField(default=True)
+    default_difficulty = models.CharField(
+        max_length=12,
+        choices=[("easy","Easy"),("medium","Medium"),("hard","Hard"),("insane","Insane")],
+        default="medium",
+    )
+    default_rounds = models.PositiveSmallIntegerField(default=3)
 
     @property
     def avatar_url(self):

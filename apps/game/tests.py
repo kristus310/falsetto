@@ -65,6 +65,7 @@ def _playing_session(
     s["score"]         = score
     s["streak"]        = streak
     s["score_saved"]   = False
+    s["game_mode"] = "complete_lyrics"
     s.save()
 
 
@@ -853,6 +854,7 @@ class VictoryViewTests(TestCase):
         s["lives"]         = lives or {"1": True, "2": True, "3": False}
         s["round_summary"] = []
         s["score_saved"]   = False
+        s["game_mode"] = "complete_lyrics"
         s.save()
 
     def test_redirects_without_won_status(self):
@@ -913,6 +915,7 @@ class GameOverViewTests(TestCase):
         s["lives"]         = lives or NO_LIVES
         s["round_summary"] = []
         s["score_saved"]   = False
+        s["game_mode"] = "complete_lyrics"
         s.save()
 
     def test_redirects_without_lost_status(self):
@@ -968,6 +971,7 @@ class ScorePersistenceTests(TestCase):
         s["lives"]         = FULL_LIVES
         s["round_summary"] = []
         s["score_saved"]   = False
+        s["game_mode"] = "complete_lyrics"
         s.save()
 
     def _lost_session(self, authenticated=True, score=217):
@@ -984,6 +988,7 @@ class ScorePersistenceTests(TestCase):
         s["lives"]         = NO_LIVES
         s["round_summary"] = []
         s["score_saved"]   = False
+        s["game_mode"] = "complete_lyrics"
         s.save()
 
     def test_victory_saves_score_authenticated(self):
@@ -991,6 +996,7 @@ class ScorePersistenceTests(TestCase):
         self.client.get(reverse("game:victory"))
         self.assertEqual(UserScore.objects.filter(user=self.user).count(), 1)
         obj = UserScore.objects.get(user=self.user)
+        self.assertEqual(obj.game_mode, "complete_lyrics")
         self.assertEqual(obj.score, 500)
         self.assertTrue(obj.completed)
         self.assertEqual(obj.artist, "Radiohead")
@@ -1108,3 +1114,17 @@ class LeaderboardViewTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["top_scores"]), 0)
+
+    def test_mode_filter_isolates_scores(self):
+        UserScore.objects.create(
+            user=self.user, score=500, artist="X",
+            completed=True, game_mode="complete_lyrics"
+        )
+        UserScore.objects.create(
+            user=self.user, score=999, artist="X",
+            completed=True, game_mode="guess_song"
+        )
+        response = self.client.get(self.url + "?mode=guess_song")
+        scores = list(response.context["top_scores"])
+        self.assertEqual(len(scores), 1)
+        self.assertEqual(scores[0].score, 999)
