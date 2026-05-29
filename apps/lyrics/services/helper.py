@@ -8,6 +8,9 @@ def _is_variant(name: str) -> bool:
         or regex._FEAT_REGEX.search(name)
     )
 
+def _should_exclude_completely(name: str) -> bool:
+    return bool(regex._STRICT_EXCLUDE_REGEX.search(name))
+
 def _normalize_title(name: str) -> str:
     name = regex._BRACKET_VARIANT_REGEX.sub("", name)
     name = regex._DASH_SUFFIX_REGEX.sub("", name)

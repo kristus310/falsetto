@@ -143,6 +143,7 @@ class LastFMAPI:
     DIFFICULTIES: Final[Set[str]] = {"easy", "medium", "hard", "insane"}
 
     def __init__(self):
+        from django.conf import settings
         self.api_key = settings.LASTFM_API_KEY
         self.base_url = settings.LASTFM_BASE_URL
         self.session = _build_retry_session()
@@ -242,38 +243,42 @@ class LastFMAPI:
             return None
 
         count = len(tracks)
-        MIN_POOL = 3
+
+        if count <= 4 and difficulty in ["hard", "insane"]:
+            return tracks[-1]
+
+        top_playcount = tracks[0]["playcount"]
 
         if difficulty == "easy":
-            cutoff = max(MIN_POOL, math.ceil(count * 0.20))
-            pool = tracks[:cutoff]
+            pool = [t for t in tracks if t["playcount"] >= (top_playcount * 0.25)]
+            if not pool:
+                pool = tracks[:max(1, math.ceil(count * 0.15))]
             weights = [t["playcount"] for t in pool]
             return random.choices(pool, weights=weights, k=1)[0]
 
         elif difficulty == "medium":
-            start = math.ceil(count * 0.20)
-            end = math.ceil(count * 0.55)
-            pool = tracks[start:end]
-            if len(pool) < MIN_POOL:
-                mid = count // 2
-                half = MIN_POOL // 2
-                pool = tracks[max(0, mid - half): mid + half + 1]
+            pool = [t for t in tracks if (top_playcount * 0.05) <= t["playcount"] < (top_playcount * 0.25)]
+            if len(pool) < 3:
+                start, end = math.ceil(count * 0.15), math.ceil(count * 0.50)
+                pool = tracks[start:end] if start < end else tracks
             weights = [math.sqrt(t["playcount"]) for t in pool]
             return random.choices(pool, weights=weights, k=1)[0]
 
-        elif difficulty == "insane":
-            start = math.ceil(count * 0.75)
-            pool = tracks[start:]
-            if len(pool) < MIN_POOL:
-                pool = tracks[-MIN_POOL:]
+        elif difficulty == "hard":
+            pool = [t for t in tracks if (top_playcount * 0.005) <= t["playcount"] < (top_playcount * 0.05)]
+            if len(pool) < 3:
+                start = math.ceil(count * 0.50)
+                pool = tracks[start:] if start < count else tracks[-3:]
             return random.choice(pool)
 
-        else:
-            start = math.ceil(count * 0.55)
-            pool = tracks[start:]
-            if len(pool) < MIN_POOL:
-                pool = tracks[-MIN_POOL:]
+        elif difficulty == "insane":
+            pool = [t for t in tracks if t["playcount"] < (top_playcount * 0.005)]
+            if len(pool) < 3:
+                tail_start = max(0, count - max(3, math.ceil(count * 0.15)))
+                pool = tracks[tail_start:]
             return random.choice(pool)
+
+        return random.choice(tracks)
 
     def _deduplicate(self, raw_tracks: list[dict]) -> list[dict]:
         groups: dict[str, list[dict]] = {}
@@ -292,12 +297,12 @@ class LastFMAPI:
 
         canonical: list[dict] = []
         for members in groups.values():
-            total_pc = sum(m["playcount"] for m in members)
             clean = [m for m in members if not m["is_variant"]]
             best = max(clean if clean else members, key=lambda m: m["playcount"])
+
             canonical.append({
                 "name": best["name"],
-                "playcount": total_pc,
+                "playcount": best["playcount"],
                 "mbid": best["mbid"],
             })
 
@@ -305,8 +310,9 @@ class LastFMAPI:
             return []
 
         canonical.sort(key=lambda t: t["playcount"], reverse=True)
+
         top_pc = canonical[0]["playcount"]
-        threshold = max(50, top_pc * 0.005)
+        threshold = max(50, top_pc * 0.0001)
         filtered = [t for t in canonical if t["playcount"] >= threshold]
 
         return filtered if len(filtered) >= 3 else canonical[:10]
@@ -440,18 +446,30 @@ class LRCLIBAPI:
             logger.warning("LRCLIB search failed for '%s': %s", query, exc)
             return None
 
-        artist_norm, track_norm = artist_name.lower(), track_name.lower()
+        artist_norm = artist_name.lower().strip()
+        track_norm = track_name.lower().strip()
+
         for item in data:
             item_artist = (item.get("artistName") or "").lower()
             item_track = (item.get("trackName") or item.get("name") or "").lower()
             if artist_norm in item_artist and track_norm in item_track:
                 return self._parse_result(item)
 
+        from . import helper
+        target_normalized_track = helper._normalize_title(track_name)
+
         for item in data:
-            if artist_norm in (item.get("artistName") or "").lower():
+            item_artist = (item.get("artistName") or "").lower()
+            item_track = (item.get("trackName") or item.get("name") or "").lower()
+
+            if artist_norm in item_artist and helper._normalize_title(item_track) == target_normalized_track:
                 return self._parse_result(item)
 
-        return self._parse_result(data[0])
+        logger.warning(
+            "Rejected low-confidence LRCLIB fallback for '%s - %s' to protect game difficulty.",
+            artist_name, track_name
+        )
+        return None
 
 _LYRIC_FILLER_WORDS: Final[frozenset] = frozenset({
     "a", "an", "the", "and", "or", "but", "so", "of", "in", "on",

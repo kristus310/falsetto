@@ -8,7 +8,8 @@ _BRACKET_VARIANT_REGEX = re.compile(
     r"|intro|outro|ft\.?|feat\.?|single|ep\b|album\b"
     r"|en\s+vivo|ao\s+vivo|directo|unplugged"
     r"|explicit|clean|deluxe|expanded|re-?recorded"
-    r"|re-?issue|anniversary|parody)"
+    r"|re-?issue|anniversary|parody"
+    r"|spotify\s+single|apple\s+music\s+session|exclusive)"  # Added platform variants
     r"[^\)\]]*"
     r"[\)\]]",
     re.IGNORECASE,
@@ -22,7 +23,8 @@ _DASH_SUFFIX_REGEX = re.compile(
     r"|mono\s+version|stereo\s+version|expanded\s+edition"
     r"|original(\s+\S+)?\s+version(\s+\d{4})?"
     r"|original"
-    r"|en\s+vivo|ao\s+vivo|directo|unplugged)"
+    r"|en\s+vivo|ao\s+vivo|directo|unplugged"
+    r"|spotify\s+single|spotify\s+exclusive|remix\s+version)"  # Added target strings
     r"\s*$",
     re.IGNORECASE,
 )
@@ -30,3 +32,8 @@ _DASH_SUFFIX_REGEX = re.compile(
 _FEAT_REGEX = re.compile(r"\s*[\(\[](feat|ft)\.?[^\)\]]*[\)\]]", re.IGNORECASE)
 
 _PUNCT_REGEX = re.compile(r"[^\w\s']")
+
+_STRICT_EXCLUDE_REGEX = re.compile(
+    r"\b(spotify\s+single|remix|edit|mix|cover|tribute|karaoke)\b",
+    re.IGNORECASE
+)
