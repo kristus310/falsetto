@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Email{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-16">
+    <div class="w-full max-w-md flex flex-col gap-8">
+
+        <div class="text-center flex flex-col gap-3">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none uppercase">
+                Verify <span class="text-primary">Email</span>
+            </h1>
+            <p class="text-base-content/50 text-sm">
+                We have sent an email to you to verify your email address.
+            </p>
+        </div>
+
+        <div class="card bg-base-200 border border-base-300 shadow-xl">
+            <div class="card-body gap-5 text-center">
+                <p class="text-sm text-base-content/75 leading-relaxed">
+                    Please check your inbox and click the verification link inside to activate your account.
+                </p>
+                <p class="text-xs text-base-content/40 mt-2">
+                    If you do not see it in a few minutes, please check your spam folder.
+                </p>
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-base-content/40">
+            Already verified?
+            <a href="{% url 'account_login' %}" class="link link-primary font-bold">Log in here</a>
+        </p>
+
+    </div>
+</div>
+{% endblock %}

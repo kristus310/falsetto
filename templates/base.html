@@ -13,7 +13,7 @@
     <script src="{% static 'js/htmx.min.js' %}" defer></script>
 </head>
 
-<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="min-h-screen bg-base-100">
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="min-h-screen bg-base-100 overflow-x-hidden">
 
     {% block navbar %}
     {% include 'components/navbar.html' %}
@@ -80,6 +80,22 @@
                 overlay.querySelector("p").textContent = description;
                 overlay.classList.remove("hidden");
                 overlay.classList.add("flex");
+            }
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const eyeOpen = btn.querySelector('.eye-open');
+            const eyeClosed = btn.querySelector('.eye-closed');
+            if (input.type === "password") {
+                input.type = "text";
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                input.type = "password";
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
             }
         }
     </script>

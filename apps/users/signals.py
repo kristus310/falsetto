@@ -31,6 +31,8 @@ def delete_old_avatar_on_update(sender, instance, **kwargs):
 
 @receiver(post_save, sender=User)
 def sync_user_email_to_allauth(sender, instance, created, **kwargs):
+    if created:
+        return
     from allauth.account.models import EmailAddress
     email = instance.email
     if email:
