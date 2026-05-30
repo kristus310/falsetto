@@ -1,10 +1,14 @@
-from django.shortcuts import render
+import logging
+
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
-from .services import LastFMAPI, LRCLIBAPI
-from core.throttle import rate_limit
+from django.conf import settings
 
-@rate_limit(max_requests=10, window_seconds=60)
+from .services.api import LastFMAPI, LRCLIBAPI
+
+logger = logging.getLogger(__name__)
+
+
 @staff_member_required
 def fetch(request: HttpRequest, artist_slug: str, difficulty_slug: str) -> HttpResponse:
     artist = artist_slug.strip()
@@ -37,5 +41,5 @@ def fetch(request: HttpRequest, artist_slug: str, difficulty_slug: str) -> HttpR
             "mbid": track.get("mbid", "")
         },
         "difficulty": difficulty,
-        "excerpt": excerpt
+        "excerpt": excerpt,
     })

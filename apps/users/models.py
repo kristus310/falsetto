@@ -7,9 +7,11 @@ from django.dispatch import receiver
 from .managers import UserManager
 from .validators import validate_avatar
 
+
 def avatar_upload_path(instance, filename):
     ext = os.path.splitext(filename)[1].lower()
     return f"avatars/{uuid.uuid4().hex}{ext}"
+
 
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -30,6 +32,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     avatar = models.ImageField(
@@ -41,7 +44,7 @@ class UserProfile(models.Model):
     show_on_leaderboard = models.BooleanField(default=True)
     default_difficulty = models.CharField(
         max_length=12,
-        choices=[("easy","Easy"),("medium","Medium"),("hard","Hard"),("insane","Insane")],
+        choices=[("easy", "Easy"), ("medium", "Medium"), ("hard", "Hard"), ("insane", "Insane")],
         default="medium",
     )
     default_rounds = models.PositiveSmallIntegerField(default=3)
@@ -62,9 +65,11 @@ class UserProfile(models.Model):
             self.avatar = None
             self.save(update_fields=["avatar"])
 
+
 @receiver(post_save, sender=User)
 def create_or_save_user_profile(sender, instance, created, **kwargs):
     UserProfile.objects.get_or_create(user=instance)
+
 
 class UserScore(models.Model):
     class Difficulties(models.TextChoices):
@@ -85,13 +90,13 @@ class UserScore(models.Model):
     difficulty = models.CharField(
         max_length=12,
         choices=Difficulties.choices,
-        default=Difficulties.MEDIUM
+        default=Difficulties.MEDIUM,
     )
     game_mode = models.CharField(
         max_length=20,
         choices=GameModes.choices,
         default=GameModes.COMPLETE_LYRICS,
-        db_index=True
+        db_index=True,
     )
     score = models.PositiveIntegerField(default=0)
     correct_count = models.PositiveSmallIntegerField(default=0)
@@ -106,8 +111,6 @@ class UserScore(models.Model):
         indexes = [
             models.Index(fields=["completed", "game_mode", "-score", "-created_at"]),
         ]
-
-    DIFFICULTIES = Difficulties.choices
 
     def __str__(self):
         return f"{self.user} | {self.artist} | {self.difficulty} | {self.score}"

@@ -267,8 +267,10 @@ LOGGING = {
     },
 }
 
+
 # RESEND
 RESEND_API_KEY = env("RESEND_API_KEY", default=None)
+
 
 # LASTFM
 LASTFM_API_KEY = env("LASTFM_API_KEY", default=None)

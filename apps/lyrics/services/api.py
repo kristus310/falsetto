@@ -12,8 +12,12 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 
 from . import helper
+from .constants import LYRIC_FILLER_WORDS
+
+_LYRIC_FILLER_WORDS = LYRIC_FILLER_WORDS
 
 logger = logging.getLogger(__name__)
+
 
 def _build_retry_session(*, user_agent: str | None = None) -> requests.Session:
     session = requests.Session()
@@ -32,6 +36,7 @@ def _build_retry_session(*, user_agent: str | None = None) -> requests.Session:
     ))
     return session
 
+
 @dataclass(frozen=True)
 class LyricsResult:
     track_name: str
@@ -49,7 +54,7 @@ class LyricsResult:
         words = line.lower().split()
         if not words:
             return 0
-        meaningful = [w for w in words if re.sub(r"[^\w]", "", w) not in _LYRIC_FILLER_WORDS]
+        meaningful = [w for w in words if re.sub(r"[^\w]", "", w) not in LYRIC_FILLER_WORDS]
         word_score = len(meaningful) * 3
         char_score = min(len(line), 60) // 5
         return word_score + char_score
@@ -134,8 +139,10 @@ class LyricsResult:
         start = random.randint(0, len(chosen_block) - span)
         return chosen_block[start: start + span]
 
+
 class LRCLIBAPIError(Exception):
     pass
+
 
 class LastFMAPI:
     _PAGE_LIMIT: Final[int] = 200
@@ -143,7 +150,6 @@ class LastFMAPI:
     DIFFICULTIES: Final[Set[str]] = {"easy", "medium", "hard", "insane"}
 
     def __init__(self):
-        from django.conf import settings
         self.api_key = settings.LASTFM_API_KEY
         self.base_url = settings.LASTFM_BASE_URL
         self.session = _build_retry_session()
@@ -186,15 +192,13 @@ class LastFMAPI:
 
         clean_artist_name = artist_name.strip()
 
-        try:
-            artist_obj = Artist.objects.get(name__iexact=clean_artist_name)
-            if artist_obj.is_fully_cached:
-                return [
-                    {"name": t.name, "playcount": t.playcount, "mbid": t.mbid}
-                    for t in artist_obj.tracks.all()
-                ]
-        except Artist.DoesNotExist:
-            pass
+        artist_obj, created = Artist.objects.get_or_create(name=clean_artist_name)
+
+        if not created and artist_obj.is_fully_cached:
+            return [
+                {"name": t.name, "playcount": t.playcount, "mbid": t.mbid}
+                for t in artist_obj.tracks.order_by("-playcount")
+            ]
 
         try:
             raw_tracks = self._fetch_all_raw_tracks(clean_artist_name)
@@ -203,31 +207,24 @@ class LastFMAPI:
             tracks = self._deduplicate(raw_tracks)
         except Exception as e:
             logger.error(f"Network error fetching top tracks for '{clean_artist_name}': {e}")
-            try:
-                artist_obj = Artist.objects.get(name__iexact=clean_artist_name)
-                return [
-                    {"name": t.name, "playcount": t.playcount, "mbid": t.mbid}
-                    for t in Track.objects.filter(artist=artist_obj)
-                ]
-            except Artist.DoesNotExist:
-                return []
+            cached = list(Track.objects.filter(artist=artist_obj).order_by("-playcount"))
+            if cached:
+                return [{"name": t.name, "playcount": t.playcount, "mbid": t.mbid} for t in cached]
+            return []
 
         try:
             with transaction.atomic():
-                artist_obj, _ = Artist.objects.get_or_create(name=clean_artist_name)
-
                 for t in tracks:
                     Track.objects.get_or_create(
                         artist=artist_obj,
                         name=t["name"].strip(),
                         defaults={
                             "playcount": t["playcount"],
-                            "mbid": t["mbid"]
+                            "mbid": t["mbid"],
                         }
                     )
-
                 artist_obj.is_fully_cached = True
-                artist_obj.save()
+                artist_obj.save(update_fields=["is_fully_cached", "updated_at"])
 
             return tracks
         except Exception as e:
@@ -299,7 +296,6 @@ class LastFMAPI:
         for members in groups.values():
             clean = [m for m in members if not m["is_variant"]]
             best = max(clean if clean else members, key=lambda m: m["playcount"])
-
             canonical.append({
                 "name": best["name"],
                 "playcount": best["playcount"],
@@ -386,7 +382,7 @@ class LRCLIBAPI:
                     duration=cache_entry.duration,
                     plain_lyrics=cache_entry.plain_lyrics,
                     synced_lyrics=cache_entry.synced_lyrics,
-                    instrumental=cache_entry.instrumental
+                    instrumental=cache_entry.instrumental,
                 )
         except Track.DoesNotExist:
             pass
@@ -418,7 +414,7 @@ class LRCLIBAPI:
                         defaults={"has_no_lyrics": True}
                     )
         except Exception as e:
-            logger.error(f"Failed committing lyric cache configuration: {e}")
+            logger.error(f"Failed committing lyric cache: {e}")
 
         return result
 
@@ -455,27 +451,19 @@ class LRCLIBAPI:
             if artist_norm in item_artist and track_norm in item_track:
                 return self._parse_result(item)
 
-        from . import helper
         target_normalized_track = helper._normalize_title(track_name)
 
         for item in data:
             item_artist = (item.get("artistName") or "").lower()
             item_track = (item.get("trackName") or item.get("name") or "").lower()
-
             if artist_norm in item_artist and helper._normalize_title(item_track) == target_normalized_track:
                 return self._parse_result(item)
 
         logger.warning(
             "Rejected low-confidence LRCLIB fallback for '%s - %s' to protect game difficulty.",
-            artist_name, track_name
+            artist_name, track_name,
         )
         return None
 
-_LYRIC_FILLER_WORDS: Final[frozenset] = frozenset({
-    "a", "an", "the", "and", "or", "but", "so", "of", "in", "on",
-    "at", "to", "is", "it", "i", "me", "my", "we", "oh", "ah",
-    "ooh", "yeah", "ya", "na", "la", "mm", "hmm", "hey", "woah",
-    "whoa", "uh", "huh", "da", "de", "do", "re", "up", "no",
-})
 
 _SECTION_HEADER_RE: Final[re.Pattern] = re.compile(r"^\[.*?\]$", re.IGNORECASE)

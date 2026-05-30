@@ -6,10 +6,10 @@ from .forms import LyricsGuessForm
 from .services import GameService, is_correct_guess, calculate_score
 
 from apps.users.models import UserScore
-from core.throttle import rate_limit
 
 _VALID_DIFFICULTIES = {"easy", "medium", "hard", "insane"}
 _VALID_MODES = {"complete_lyrics", "guess_song", "pick_song"}
+
 
 def index(request: HttpRequest) -> HttpResponse:
     most_played = "None yet!"
@@ -44,7 +44,6 @@ def index(request: HttpRequest) -> HttpResponse:
     return render(request, "game/index.html", context=context)
 
 
-@rate_limit(max_requests=100, window_seconds=60)
 def lobby(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         artist = request.POST.get("artist", "").strip().title()[:120]
@@ -101,7 +100,6 @@ def lobby(request: HttpRequest) -> HttpResponse:
     })
 
 
-@rate_limit(max_requests=100, window_seconds=60)
 def pick_song_lobby(request: HttpRequest) -> HttpResponse:
     game_service = GameService()
 
@@ -152,7 +150,6 @@ def pick_song_lobby(request: HttpRequest) -> HttpResponse:
     return render(request, "game/pick-song-lobby.html")
 
 
-@rate_limit(max_requests=120, window_seconds=60)
 def game(request: HttpRequest) -> HttpResponse:
     artist = request.session.get("game_artist")
     status = request.session.get("game_status", "lobby")
@@ -306,12 +303,9 @@ def game(request: HttpRequest) -> HttpResponse:
 def _wrong_guess_message(game_mode: str) -> str:
     if game_mode == "guess_song":
         return "Wrong song title! Try again."
-    if game_mode == "pick_song":
-        return "Incorrect lyric guess! Try again."
     return "Incorrect lyric guess! Try again."
 
 
-@rate_limit(max_requests=30, window_seconds=60)
 def victory(request: HttpRequest) -> HttpResponse:
     if request.session.get("game_status") != "won":
         return redirect("game:lobby")
@@ -335,7 +329,7 @@ def victory(request: HttpRequest) -> HttpResponse:
             score=score,
             correct_count=correct_count,
             total_rounds=total_rounds,
-            completed=True
+            completed=True,
         )
         request.session["score_saved"] = True
 
@@ -357,7 +351,6 @@ def victory(request: HttpRequest) -> HttpResponse:
     return render(request, "game/victory.html", context)
 
 
-@rate_limit(max_requests=30, window_seconds=60)
 def game_over(request: HttpRequest) -> HttpResponse:
     if request.session.get("game_status") != "lost":
         return redirect("game:lobby")
@@ -381,7 +374,7 @@ def game_over(request: HttpRequest) -> HttpResponse:
             score=score,
             correct_count=correct_count,
             total_rounds=total_rounds,
-            completed=False
+            completed=False,
         )
         request.session["score_saved"] = True
 
@@ -412,7 +405,7 @@ def leaderboard(request: HttpRequest) -> HttpResponse:
         UserScore.objects.filter(
             completed=True,
             game_mode=selected_mode,
-            user__profile__show_on_leaderboard=True
+            user__profile__show_on_leaderboard=True,
         )
         .select_related("user")
         .order_by("-score", "-created_at")[:50]

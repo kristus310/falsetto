@@ -1,4 +1,3 @@
-import os
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -6,11 +5,10 @@ from django.contrib.auth import logout
 from django.contrib import messages
 from django.db.models import Sum, Max, Count
 from django.views.decorators.http import require_http_methods
-from django.conf import settings as django_settings
 
-from core.throttle import rate_limit
 from .forms import UsernameForm, EmailForm, DeleteAccountForm, AvatarForm
 from .models import UserProfile
+
 
 def _compute_win_streak(scores_qs):
     games = list(scores_qs.order_by("-created_at").values_list("completed", flat=True))
@@ -31,6 +29,7 @@ def _compute_win_streak(scores_qs):
             running = 0
 
     return current, best
+
 
 @login_required
 def profile(request: HttpRequest) -> HttpResponse:
@@ -68,9 +67,9 @@ def profile(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "users/profile.html", context)
 
+
 @login_required
 @require_http_methods(["GET", "POST"])
-@rate_limit(max_requests=20, window_seconds=60)
 def settings(request: HttpRequest) -> HttpResponse:
     user = request.user
     user_profile, _ = UserProfile.objects.get_or_create(user=user)
@@ -87,20 +86,14 @@ def settings(request: HttpRequest) -> HttpResponse:
             if "avatar" in request.FILES:
                 avatar_form = AvatarForm(request.POST, request.FILES, instance=user_profile)
                 if avatar_form.is_valid():
-                    old_avatar = user_profile.avatar.name if user_profile.avatar else None
                     avatar_form.save()
-
-                    if old_avatar:
-                        old_path = django_settings.MEDIA_ROOT / old_avatar
-                        if old_path.is_file():
-                            os.remove(old_path)
-
                     messages.success(request, "Avatar updated successfully.")
                     return redirect("users:settings")
                 else:
                     messages.error(request, avatar_form.errors["avatar"][0])
             else:
                 messages.error(request, "Please pick an image file before clicking save.")
+
         elif action == "profile":
             username_form = UsernameForm(request.POST, instance=user)
             email_form = EmailForm(request.POST, instance=user)
@@ -138,17 +131,17 @@ def settings(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "users/settings.html", context)
 
+
 @login_required
 @require_http_methods(["POST"])
-@rate_limit(max_requests=10, window_seconds=60)
 def delete_avatar(request):
     request.user.profile.delete_avatar()
     messages.success(request, "Avatar removed.")
     return redirect("users:settings")
 
+
 @login_required
 @require_http_methods(["POST"])
-@rate_limit(max_requests=5, window_seconds=300)
 def delete_account(request: HttpRequest) -> HttpResponse:
     user = request.user
     form = DeleteAccountForm(request.POST, user=user)

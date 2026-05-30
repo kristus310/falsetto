@@ -1,3 +1,4 @@
+import math
 import random
 import re
 import threading
@@ -7,7 +8,7 @@ from difflib import SequenceMatcher
 from typing import Dict, Any, Tuple, Optional
 
 from apps.lyrics.services.api import LastFMAPI, LRCLIBAPI, LyricsResult
-from apps.lyrics.services.api import _LYRIC_FILLER_WORDS
+from apps.lyrics.services.constants import LYRIC_FILLER_WORDS
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ _BASE_SCORE = 100
 _LIVES_BONUS_PER_LIFE = 10
 _STREAK_BONUS_PER_ROUND = 15
 
+
 def calculate_score(difficulty: str, lives: Dict[str, bool], streak: int) -> int:
     multiplier = _DIFFICULTY_MULTIPLIER.get(difficulty, 1.0)
     lives_remaining = sum(1 for v in lives.values() if v)
@@ -30,12 +32,14 @@ def calculate_score(difficulty: str, lives: Dict[str, bool], streak: int) -> int
     streak_bonus = streak * _STREAK_BONUS_PER_ROUND
     return int((_BASE_SCORE + lives_bonus + streak_bonus) * multiplier)
 
+
 def _normalise(text: str) -> str:
     text = unicodedata.normalize("NFD", text)
     text = "".join(c for c in text if unicodedata.category(c) != "Mn")
     text = text.lower()
     text = _PUNCT_RE.sub("", text)
     return " ".join(text.split())
+
 
 def is_correct_guess(guess: str, answer: str) -> bool:
     from django.conf import settings
@@ -54,6 +58,7 @@ def is_correct_guess(guess: str, answer: str) -> bool:
     threshold: float = getattr(settings, "GAME_FUZZY_THRESHOLD", 0.85)
     ratio = SequenceMatcher(None, g, a).ratio()
     return ratio >= threshold
+
 
 class GameService:
     def __init__(self):
@@ -78,38 +83,26 @@ class GameService:
 
         def _run() -> None:
             try:
-                django_setup_needed = False
-                try:
-                    from django.db import connection as _conn
-                    _conn.ensure_connection()
-                except Exception:
-                    django_setup_needed = True
-
-                if django_setup_needed:
-                    import django
-                    django.setup()
-
                 tracks = self.lastfm.get_top_tracks(artist)
                 if not tracks:
                     logger.debug("warm_up_cache_async: no tracks found for '%s'", artist)
                     return
 
-                import math as _math
                 count = len(tracks)
                 MIN_POOL = 3
 
                 if difficulty == "easy":
-                    cutoff = max(MIN_POOL, _math.ceil(count * 0.20))
+                    cutoff = max(MIN_POOL, math.ceil(count * 0.20))
                     candidates = tracks[:cutoff]
                 elif difficulty == "medium":
-                    start = _math.ceil(count * 0.20)
-                    end = _math.ceil(count * 0.55)
+                    start = math.ceil(count * 0.20)
+                    end = math.ceil(count * 0.55)
                     candidates = tracks[start:end] or tracks[:MIN_POOL]
                 elif difficulty == "hard":
-                    start = _math.ceil(count * 0.55)
+                    start = math.ceil(count * 0.55)
                     candidates = tracks[start:] or tracks[-MIN_POOL:]
                 else:
-                    start = _math.ceil(count * 0.75)
+                    start = math.ceil(count * 0.75)
                     candidates = tracks[start:] or tracks[-MIN_POOL:]
 
                 for track in candidates[:5]:
@@ -162,7 +155,7 @@ class GameService:
             words = re.findall(r'\b[a-zA-Z]{4,}\b', full_excerpt)
             valid_words = [
                 w for w in words
-                if w.lower() not in _LYRIC_FILLER_WORDS
+                if w.lower() not in LYRIC_FILLER_WORDS
             ]
 
             if not valid_words:
@@ -238,7 +231,7 @@ class GameService:
                 words = re.findall(r'\b[a-zA-Z]{4,}\b', full_excerpt)
                 valid_words = [
                     w for w in words
-                    if w.lower() not in _LYRIC_FILLER_WORDS
+                    if w.lower() not in LYRIC_FILLER_WORDS
                     and w.lower() not in used_words
                 ]
 

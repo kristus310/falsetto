@@ -9,7 +9,7 @@ _BRACKET_VARIANT_REGEX = re.compile(
     r"|en\s+vivo|ao\s+vivo|directo|unplugged"
     r"|explicit|clean|deluxe|expanded|re-?recorded"
     r"|re-?issue|anniversary|parody"
-    r"|spotify\s+single|apple\s+music\s+session|exclusive)"  # Added platform variants
+    r"|spotify\s+single|apple\s+music\s+session|exclusive)"
     r"[^\)\]]*"
     r"[\)\]]",
     re.IGNORECASE,
@@ -24,7 +24,7 @@ _DASH_SUFFIX_REGEX = re.compile(
     r"|original(\s+\S+)?\s+version(\s+\d{4})?"
     r"|original"
     r"|en\s+vivo|ao\s+vivo|directo|unplugged"
-    r"|spotify\s+single|spotify\s+exclusive|remix\s+version)"  # Added target strings
+    r"|spotify\s+single|spotify\s+exclusive|remix\s+version)"
     r"\s*$",
     re.IGNORECASE,
 )
