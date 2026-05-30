@@ -90,11 +90,6 @@ make superuser
 make run
 ```
 
-To automatically recompile Tailwind CSS changes while developing:
-```bash
-make tailwind-watch
-```
-
 ---
 
 ## Full Make Command Reference
