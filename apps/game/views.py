@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.db.models import Count, Avg, Max, F, FloatField
 from django.db.models.functions import Cast
 from django.core.paginator import Paginator
+from django.conf import settings
+import datetime
 from .forms import LyricsGuessForm
 from .services import GameService, is_correct_guess, calculate_score
 
@@ -79,6 +81,13 @@ def lobby(request: HttpRequest) -> HttpResponse:
 
     default_difficulty = "medium"
     default_rounds = 3
+    daily_score = None
+
+    today = datetime.date.today()
+    artists = getattr(settings, "DAILY_ARTISTS", ["Coldplay"])
+    day_index = today.toordinal() % len(artists)
+    daily_artist = artists[day_index]
+
     if request.user.is_authenticated:
         try:
             default_difficulty = request.user.profile.default_difficulty
@@ -86,10 +95,66 @@ def lobby(request: HttpRequest) -> HttpResponse:
         except Exception:
             pass
 
+        daily_score = UserScore.objects.filter(
+            user=request.user, is_daily=True, created_at__date=today
+        ).first()
+
     return render(request, "game/lobby.html", {
         "default_difficulty": default_difficulty,
         "default_rounds": default_rounds,
+        "daily_artist": daily_artist,
+        "daily_score": daily_score,
+        "has_played_daily": daily_score is not None,
     })
+
+
+def start_daily_challenge(request: HttpRequest) -> HttpResponse:
+    if not request.user.is_authenticated:
+        messages.error(request, "Please log in or create an account to play the Daily Challenge!")
+        return redirect("game:lobby")
+
+    if request.method == "POST":
+        mode = request.POST.get("mode", "complete_lyrics")
+        if mode not in {"complete_lyrics", "guess_song"}:
+            mode = "complete_lyrics"
+
+        today = datetime.date.today()
+        if UserScore.objects.filter(
+            user=request.user,
+            is_daily=True,
+            created_at__date=today,
+        ).exists():
+            messages.warning(request, "You have already completed today's Daily Challenge!")
+            return redirect("game:lobby")
+
+        artists = getattr(settings, "DAILY_ARTISTS", ["Coldplay"])
+        day_index = today.toordinal() % len(artists)
+        artist = artists[day_index]
+
+        difficulty = getattr(settings, "DAILY_DIFFICULTY", "medium")
+        total_rounds = getattr(settings, "DAILY_ROUND_COUNT", 3)
+
+        request.session["game_artist"] = artist
+        request.session["difficulty"] = difficulty
+        request.session["total_rounds"] = total_rounds
+        request.session["current_round"] = 1
+        request.session["lives"] = {"1": True, "2": True, "3": True}
+        request.session["music"] = None
+        request.session["answered"] = False
+        request.session["game_status"] = "playing"
+        request.session["correct_count"] = 0
+        request.session["score"] = 0
+        request.session["streak"] = 0
+        request.session["round_summary"] = []
+        request.session["score_saved"] = False
+        request.session["game_mode"] = mode
+        request.session["is_daily"] = True
+
+        GameService().warm_up_cache_async(artist, difficulty)
+
+        return redirect("game:game")
+
+    return redirect("game:lobby")
 
 
 def pick_song_lobby(request: HttpRequest) -> HttpResponse:
@@ -245,16 +310,27 @@ def game(request: HttpRequest) -> HttpResponse:
         form = LyricsGuessForm()
 
     if not music:
+        is_daily = request.session.get("is_daily", False)
         attempts = 0
         while attempts < 3:
-            if game_mode == "guess_song":
-                music = game_service.generate_guess_song_data(artist, difficulty)
-            elif game_mode == "pick_song":
-                song_name = request.session.get("pick_song_name", "")
-                used_words = request.session.get("pick_song_used_words", [])
-                music = game_service.generate_pick_song_data(artist, song_name, used_words)
+            if is_daily:
+                today_str = datetime.date.today().isoformat()
+                music = game_service.generate_deterministic_round_data(
+                    artist=artist,
+                    difficulty=difficulty,
+                    date_str=today_str,
+                    round_num=current_round + attempts,
+                    mode=game_mode
+                )
             else:
-                music = game_service.generate_round_data(artist, difficulty)
+                if game_mode == "guess_song":
+                    music = game_service.generate_guess_song_data(artist, difficulty)
+                elif game_mode == "pick_song":
+                    song_name = request.session.get("pick_song_name", "")
+                    used_words = request.session.get("pick_song_used_words", [])
+                    music = game_service.generate_pick_song_data(artist, song_name, used_words)
+                else:
+                    music = game_service.generate_round_data(artist, difficulty)
 
             if music:
                 break
@@ -312,6 +388,8 @@ def victory(request: HttpRequest) -> HttpResponse:
     artist = request.session.get("game_artist", "")
     game_mode = request.session.get("game_mode", "complete_lyrics")
 
+    is_daily = request.session.get("is_daily", False)
+    round_summary = request.session.get("round_summary", [])
     if request.user.is_authenticated and not request.session.get("score_saved", False):
         UserScore.objects.create(
             user=request.user,
@@ -322,6 +400,8 @@ def victory(request: HttpRequest) -> HttpResponse:
             correct_count=correct_count,
             total_rounds=total_rounds,
             completed=True,
+            is_daily=is_daily,
+            summary_data=round_summary,
         )
         request.session["score_saved"] = True
 
@@ -339,6 +419,7 @@ def victory(request: HttpRequest) -> HttpResponse:
         "is_pick_song": game_mode == "pick_song",
         "is_complete_lyrics": game_mode == "complete_lyrics",
         "pick_song_name": request.session.get("pick_song_name", ""),
+        "is_daily": is_daily,
     }
     return render(request, "game/victory.html", context)
 
@@ -357,6 +438,8 @@ def game_over(request: HttpRequest) -> HttpResponse:
     artist = request.session.get("game_artist", "")
     game_mode = request.session.get("game_mode", "complete_lyrics")
 
+    is_daily = request.session.get("is_daily", False)
+    round_summary = request.session.get("round_summary", [])
     if request.user.is_authenticated and not request.session.get("score_saved", False):
         UserScore.objects.create(
             user=request.user,
@@ -367,6 +450,8 @@ def game_over(request: HttpRequest) -> HttpResponse:
             correct_count=correct_count,
             total_rounds=total_rounds,
             completed=False,
+            is_daily=is_daily,
+            summary_data=round_summary,
         )
         request.session["score_saved"] = True
 
@@ -384,6 +469,7 @@ def game_over(request: HttpRequest) -> HttpResponse:
         "is_pick_song": game_mode == "pick_song",
         "is_complete_lyrics": game_mode == "complete_lyrics",
         "pick_song_name": request.session.get("pick_song_name", ""),
+        "is_daily": is_daily,
     }
     return render(request, "game/game-over.html", context)
 
@@ -394,11 +480,9 @@ def history(request: HttpRequest) -> HttpResponse:
             "is_authenticated": False,
         })
 
-    # Available choices for filtering
     selected_mode = request.GET.get("mode", "")
     selected_difficulty = request.GET.get("difficulty", "")
 
-    # Query scores strictly for the logged-in user
     scores = UserScore.objects.filter(user=request.user)
 
     if selected_mode in _VALID_MODES:
@@ -408,24 +492,21 @@ def history(request: HttpRequest) -> HttpResponse:
 
     scores = scores.order_by("-created_at")
 
-    # Compute personal stats/metrics
     total_games = UserScore.objects.filter(user=request.user).count()
     completed_games = UserScore.objects.filter(user=request.user, completed=True)
 
-    # Calculate avg accuracy & highest score securely and performantly, avoiding division by zero in SQL
+    highest_score = completed_games.aggregate(highest_score=Max("score"))["highest_score"] or 0
+
     metrics = completed_games.filter(total_rounds__gt=0).aggregate(
-        avg_accuracy=Avg(Cast(F("correct_count"), FloatField()) / Cast(F("total_rounds"), FloatField()) * 100),
-        highest_score=Max("score")
+        avg_accuracy=Avg(Cast(F("correct_count"), FloatField()) / Cast(F("total_rounds"), FloatField()) * 100)
     )
 
     avg_accuracy = round(metrics["avg_accuracy"] or 0.0, 1)
-    highest_score = metrics["highest_score"] or 0
     completed_count = completed_games.count()
     victory_rate = round(completed_count / total_games * 100, 1) if total_games > 0 else 0.0
 
-    # Paginate the scores list
     page_number = request.GET.get("page", 1)
-    paginator = Paginator(scores, 15)  # 15 scores per page
+    paginator = Paginator(scores, 15)
     page_obj = paginator.get_page(page_number)
 
     context = {

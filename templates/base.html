@@ -19,13 +19,70 @@
     {% include 'components/navbar.html' %}
     {% endblock navbar %}
 
+    {% if messages %}
+    <div class="max-w-xl mx-auto px-6 mt-4 flex flex-col gap-2">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} shadow-lg flex justify-between items-center transition-all duration-300"
+            id="msg-{{ forloop.counter }}">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    class="stroke-current shrink-0 w-6 h-6">
+                    {% if message.tags == 'error' %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    {% elif message.tags == 'success' %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    {% else %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    {% endif %}
+                </svg>
+                <span class="font-medium text-sm text-left">{{ message }}</span>
+            </div>
+            <button onclick="document.getElementById('msg-{{ forloop.counter }}').remove()"
+                class="btn btn-ghost btn-xs btn-circle shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <main>
         {% block content %}{% endblock %}
     </main>
 
+
     {% block footer %}
     {% include 'components/footer.html' %}
     {% endblock footer %}
+
+    <div id="global-loading-overlay"
+        class="hidden fixed inset-0 bg-base-300/70 backdrop-blur-sm z-[9999] items-center justify-center flex-col gap-4 text-center">
+        <div
+            class="flex flex-col items-center gap-3 bg-base-100 p-8 rounded-2xl shadow-2xl border border-base-300 mx-4">
+            <span class="loading loading-infinity loading-lg text-primary scale-150 animate-pulse"></span>
+            <h3 class="text-xl font-black mt-2">Starting round...</h3>
+            <p class="text-xs text-base-content/60 max-w-xs leading-relaxed">Please wait a moment while we spin up the
+                lyrics and configure the game.</p>
+        </div>
+    </div>
+
+    <script>
+        function showGlobalLoader(title = "Starting round...", description = "Please wait a moment while we spin up the lyrics and configure the game.") {
+            const overlay = document.getElementById("global-loading-overlay");
+            if (overlay) {
+                overlay.querySelector("h3").textContent = title;
+                overlay.querySelector("p").textContent = description;
+                overlay.classList.remove("hidden");
+                overlay.classList.add("flex");
+            }
+        }
+    </script>
 
 </body>
 

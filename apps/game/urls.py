@@ -10,5 +10,6 @@ urlpatterns: list[URLPattern] = [
     path("game/", views.game, name="game"),
     path("victory/", views.victory, name="victory"),
     path("game-over/", views.game_over, name="game_over"),
+    path("daily/start/", views.start_daily_challenge, name="start_daily_challenge"),
     path("history/", views.history, name="history"),
 ]

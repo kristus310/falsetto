@@ -100,6 +100,16 @@ DATABASES = {"default": _db_config}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Cache
+# https://docs.djangoproject.com/en/5.0/topics/cache/
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache_table",
+    }
+}
+
+
 if _IS_SQLITE:
     from django.db.backends.signals import connection_created
 
@@ -280,3 +290,14 @@ LASTFM_BASE_URL = "https://ws.audioscrobbler.com/2.0/"
 # AVATARS
 AVATAR_MAX_SIZE_MB = env.int("AVATAR_MAX_SIZE_MB", default=2)
 AVATAR_MAX_DIMENSIONS = env.int("AVATAR_MAX_DIMENSIONS", default=2000)
+
+# DAILY CHALLENGES
+DAILY_ROUND_COUNT = env.int("DAILY_ROUND_COUNT", default=3)
+DAILY_DIFFICULTY = env.str("DAILY_DIFFICULTY", default="easy")
+DAILY_ARTISTS = env.list("DAILY_ARTISTS", default=[
+    "Coldplay", "Radiohead", "The Beatles", "Taylor Swift", "Queen",
+    "Ed Sheeran", "Billie Eilish", "Adele", "Drake", "Eminem",
+    "Michael Jackson", "Rihanna", "Maroon 5", "Bruno Mars", "Justin Bieber",
+    "Imagine Dragons", "The Weeknd", "Dua Lipa", "Ariana Grande", "Katy Perry",
+    "Beyonce", "Lady Gaga", "Sia", "Harry Styles", "Olivia Rodrigo"
+])

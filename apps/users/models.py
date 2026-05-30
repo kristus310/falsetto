@@ -106,6 +106,8 @@ class UserScore(models.Model):
     total_rounds = models.PositiveSmallIntegerField(default=0)
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_daily = models.BooleanField(default=False)
+    summary_data = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = "user score"
@@ -113,6 +115,9 @@ class UserScore(models.Model):
         ordering = ["-score", "-created_at"]
         indexes = [
             models.Index(fields=["completed", "game_mode", "-score", "-created_at"]),
+            models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["user", "completed", "-created_at"]),
+            models.Index(fields=["user", "is_daily", "-created_at"]),
         ]
 
     def __str__(self):

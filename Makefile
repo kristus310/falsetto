@@ -54,7 +54,7 @@ collectstatic:
 	$(MANAGE) collectstatic --no-input --ignore css/input.css
 
 serve:
-	uv run gunicorn core.wsgi:application --bind 0.0.0.0:8000
+	uv run gunicorn core.wsgi:application --bind 127.0.0.1:8000
 
 test:
 	$(MANAGE) collectstatic --noinput --ignore css/input.css

@@ -69,8 +69,10 @@
             </div>
         </div>
 
+
+
         <form method="POST" class="card bg-base-200 border border-base-300 shadow-xl" id="lobby-form"
-            onsubmit="if(this.checkValidity()) { this.querySelector('.submit-spinner').classList.remove('hidden'); this.querySelector('.submit-icon').classList.add('hidden'); }">
+            onsubmit="if(this.checkValidity()) { showGlobalLoader('Starting round...', 'Finding artist tracks, caching music details, and compiling lyric snippets...'); }">
             {% csrf_token %}
 
             <input type="hidden" name="mode" id="mode-hidden" value="complete_lyrics" />
@@ -226,6 +228,137 @@
 
             </div>
         </form>
+
+        {% if not has_played_daily %}
+        <div class="card bg-base-200 border border-base-300 shadow-xl overflow-hidden rounded-3xl mt-4">
+            <div class="card-body p-6 sm:p-8 gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📅</span>
+                    <div>
+                        <h2 class="font-black text-lg uppercase tracking-tight">Daily Challenge</h2>
+                        <p class="text-xs text-base-content/40 mt-0.5">Test your music skills with today's featured
+                            artist!</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between border-b border-base-300 pb-3 mt-2">
+                    <div>
+                        <span class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Today's
+                            Artist</span>
+                        <p class="font-black text-md text-primary">{{ daily_artist }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span
+                            class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Difficulty</span>
+                        <p class="badge badge-secondary badge-sm font-extrabold uppercase">Medium</p>
+                    </div>
+                </div>
+
+                {% if user.is_authenticated %}
+                <div class="flex flex-col sm:flex-row gap-3 mt-2">
+                    <form method="POST" action="{% url 'game:start_daily_challenge' %}" class="flex-1"
+                        onsubmit="showGlobalLoader('Starting Challenge...', 'Spinning up today\'s deterministic lyric snippets...');">
+                        {% csrf_token %}
+                        <input type="hidden" name="mode" value="complete_lyrics" />
+                        <button type="submit"
+                            class="btn btn-primary btn-md rounded-xl font-bold uppercase tracking-wide w-full">
+                            Complete Lyrics
+                        </button>
+                    </form>
+                    <form method="POST" action="{% url 'game:start_daily_challenge' %}" class="flex-1"
+                        onsubmit="showGlobalLoader('Starting Challenge...', 'Spinning up today\'s deterministic lyric snippets...');">
+                        {% csrf_token %}
+                        <input type="hidden" name="mode" value="guess_song" />
+                        <button type="submit"
+                            class="btn btn-secondary btn-md rounded-xl font-bold uppercase tracking-wide w-full">
+                            Guess the Song
+                        </button>
+                    </form>
+                </div>
+                <p class="text-[10px] text-center text-base-content/40 mt-1">Play today's deterministic challenge. Only
+                    1 mode attempt allowed per day!</p>
+                {% else %}
+                <div class="text-center p-4 border border-dashed border-base-300 rounded-2xl bg-base-100/30">
+                    <p class="text-xs font-semibold text-base-content/60">Log in to play today's Daily Challenges and
+                        track your record!</p>
+                    <div class="flex justify-center gap-3 mt-3">
+                        <a href="{% url 'account_login' %}?next={{ request.path }}"
+                            class="btn btn-outline btn-xs rounded-lg font-bold">Sign In</a>
+                        <a href="{% url 'account_signup' %}" class="btn btn-primary btn-xs rounded-lg font-bold">Join
+                            Free</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card bg-base-200 border border-base-300 shadow-xl overflow-hidden rounded-3xl mt-4">
+            <div class="card-body p-6 sm:p-8 gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📅</span>
+                    <div>
+                        <h2 class="font-black text-lg uppercase tracking-tight">Today's Daily Challenge</h2>
+                        <span class="badge badge-success badge-sm font-extrabold uppercase mt-0.5">COMPLETED</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 bg-base-100/60 rounded-xl p-3 border border-base-300/40 text-center">
+                    <div>
+                        <span class="text-[9px] font-black uppercase text-base-content/40 tracking-wider">Score</span>
+                        <p class="font-black text-success text-sm mt-0.5">
+                            {{ daily_score.correct_count }}/{{ daily_score.total_rounds }}</p>
+                    </div>
+                    <div>
+                        <span
+                            class="text-[9px] font-black uppercase text-base-content/40 tracking-wider">Accuracy</span>
+                        <p class="font-black text-info text-sm mt-0.5">{{ daily_score.accuracy }}%</p>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-black uppercase text-base-content/40 tracking-wider">Points</span>
+                        <p class="font-black text-primary text-sm mt-0.5">{{ daily_score.points }}</p>
+                    </div>
+                </div>
+
+                {% if daily_score.summary_data %}
+                <div class="flex flex-col gap-2 mt-2">
+                    <span class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Your
+                        Performance</span>
+                    {% for item in daily_score.summary_data %}
+                    <div
+                        class="flex items-center justify-between bg-base-100/40 border border-base-300/50 rounded-xl px-3 py-2 text-xs">
+                        <div class="truncate max-w-[65%]">
+                            <span class="font-bold text-base-content">{{ item.song }}</span>
+                            <span class="text-base-content/40 mx-0.5">-</span>
+                            <span class="text-base-content/60">{{ item.artist }}</span>
+                        </div>
+                        <div class="shrink-0">
+                            {% if item.correct %}
+                            <span class="text-success font-bold flex items-center gap-1">
+                                ✓
+                                {% if item.mode == 'guess_song' or daily_score.game_mode == 'guess_song' %}
+                                <span class="opacity-60 font-medium">Song: {{ item.answer }}</span>
+                                {% else %}
+                                <span class="opacity-60 font-medium">Lyric: "{{ item.answer }}"</span>
+                                {% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-error font-bold flex items-center gap-1">
+                                ✗
+                                {% if item.mode == 'guess_song' or daily_score.game_mode == 'guess_song' %}
+                                <span class="opacity-60 font-medium">Answer: {{ item.answer }}</span>
+                                {% else %}
+                                <span class="opacity-60 font-medium">Answer: "{{ item.answer }}"</span>
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
 
         <p class="text-center text-sm text-base-content/30">
             <a href="{% url 'game:index' %}" class="link link-hover">← Back to home</a>

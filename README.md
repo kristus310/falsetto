@@ -1,155 +1,114 @@
 # Falsetto
 
-Falsetto is a music trivia game. Pick an artist, pick a mode, and see how well you actually know their songs — not just the hits.
+Hi! Welcome to **Falsetto** — a music trivia game I built as a passion project to test how well we actually know our favorite artists (not just their top-played radio hits).
 
-There are three ways to play. In **Complete the Lyrics**, the game shows you a verse with one word missing and you fill it in. In **Guess the Song**, you get a full verse with nothing hidden and have to name the track. In **Pick a Song**, you choose a specific song from an artist's catalog and the game quizzes you on it across multiple rounds, pulling a different blank each time.
-
-It runs in the browser, no install needed. Accounts are optional — you only need one if you want your scores saved to the leaderboard.
+It is a fully responsive web application built with **Django**, **Tailwind CSS**, and **HTMX**. It queries live music databases, parses lyrics dynamically, and serves up smooth, fast trivia directly in your browser.
 
 ---
 
-## Screenshots
+## The Game Modes
 
-### Landing Page
-![Falsetto Landing Page](assets/screenshots/landing.png)
+There are three ways to play, plus a special daily challenge:
 
-### Lobby
-![Lobby Setup Screen](assets/screenshots/lobby.png)
+*   **Complete the Lyrics:** The game pulls a random song from an artist's catalog, displays a verse snippet with a single word blanked out, and you have to fill it in.
+*   **Guess the Song:** You get a full lyric verse snippet with nothing hidden, and you have to name the track.
+*   **Pick a Song:** Choose a specific song from an artist's catalog to get quizzed on across multiple rounds, pulling a different blanked-out word each time.
+*   **Daily Challenge:** A deterministic game generated once a day featuring a designated daily artist. Everyone gets the exact same lyric snippets based on date seeds, and you get exactly one attempt per day to build your streak and track your performance history!
 
-### Gameplay
-![Active Gameplay Screen](assets/screenshots/gameplay.png)
-
-### End Screen
-![Victory Screen](assets/screenshots/victory.png)
+> [!NOTE]
+> Accounts are entirely optional! You can play as a guest as much as you'd like. Creating an account simply allows the game to securely save your detailed match history, victory rates, and personal accuracy metrics.
 
 ---
 
-## How a round works
+## How a Round Works
 
-1. Pick an artist and a mode. For Complete the Lyrics and Guess the Song, also pick a difficulty and how many rounds you want. For Pick a Song, search the artist's catalog and select a track.
-2. A lyric snippet appears — either with a word blanked out, or in full depending on the mode.
-3. Type your answer and submit. Correct guesses score points and build your streak. Wrong guesses cost a life — you get three per game.
-4. The game ends when you finish all rounds or run out of lives. Scores are saved to the leaderboard if you're logged in.
-
-That's it.
+1.  **Select Your Game:** Pick an artist, mode, difficulty, and round count (or pick a specific song in Pick a Song mode).
+2.  **Read the Lyrics:** A beautiful, responsive snippet of lyrics will appear.
+3.  **Type Your Guess:** Submit your answer. Correct guesses score points and build your streak. Incorrect guesses cost a life (you get **3 lives** per session).
+4.  **Victory or Defeat:** Complete all rounds to win! If you run out of lives, it's game over. If you are signed in, your stats are instantly committed to your personal **My History** page.
 
 ---
 
-## Scoring
+## Under the Hood (For Techies)
 
-$$\text{Score} = (\text{Base Score} + \text{Lives Bonus} + \text{Streak Bonus}) \times \text{Difficulty Multiplier}$$
+If you're interested in the coding side, here is how the engine runs behind the scenes:
 
-* **Base Score**: 100 points per round
-* **Lives Bonus**: +10 for each life still standing
-* **Streak Bonus**: +15 for each consecutive correct answer
-* **Multipliers**: Easy ×1.0 — Medium ×1.5 — Hard ×2.5 — Insane ×4.0
+### 1. Song Filtering & Smart Deduplication
+When you search for an artist, the game queries the **Last.fm API** to retrieve their top tracks. To keep gameplay clean, the engine runs a deduplication filter using regular expressions to collapse variants (like `Live`, `Acoustic`, `Remastered`, `Radio Edit`, or `feat.`) into their single canonical tracks.
 
----
+The tracks are then sorted by popularity and grouped into difficulty tiers:
+*   **Easy:** Top 20% by play count
+*   **Medium:** 20% to 55%
+*   **Hard:** 55% to 75%
+*   **Insane:** The deep cuts (75%+)
 
-## Under the Hood
+We cache this catalog in the database after the first fetch so subsequent rounds load instantly and conserve API limits.
 
-This section is for developers. Skip it if you just want to play.
+### 2. Lyric Processing & Excerpt Selection
+Once a track is selected, the game talks to **LRCLIB** to fetch synchronized and plain-text lyrics. The engine filters the text by:
+*   Stripping out structural markers (e.g. `[Chorus]`, `[Verse 1]`).
+*   Scoring lines based on meaningful word density (excluding generic filler words like "oh", "yeah", "la").
+*   Discarding any snippets containing the song's title to prevent accidental giveaways.
 
-### How songs are picked
+The highest-scoring block of 3–4 lines is chosen as the round's excerpt.
 
-Searching for an artist hits the **Last.fm API** and pulls their full catalog. The response gets deduplicated — live versions, remixes, and re-recordings are collapsed into their canonical track — and sorted by play count. That sorted list is what the difficulty tiers cut into:
+### 3. Fuzzy Matching
+To make sure a missing accent or minor typo doesn't cost you a life, the guess checker normalizes both the input and the answer by stripping accents, capitalization, and punctuation. It then performs a `difflib.SequenceMatcher` comparison. By default, an **85% similarity** passes as correct.
 
-* **Easy** — top 20% by play count
-* **Medium** — 20–55%
-* **Hard** — 55%+
-* **Insane** — 75%+
-
-The catalog is cached locally after the first fetch so repeat searches are instant and don't burn API quota.
-
-### How lyrics are processed
-
-Once a track is picked, **LRCLIB** returns the plain-text lyrics. Before anything reaches the player, the engine runs a few passes over the text: section headers like `[Chorus]` are stripped, blocks are scored by how many meaningful words they contain (filler words don't count), and any block that contains the song title is thrown out to prevent accidental giveaways. The highest-scoring block is picked as the excerpt.
-
-For Complete the Lyrics and Pick a Song, a word is then chosen from that block — at least 4 letters, not a filler word, and in Pick a Song mode, not a word that's already been used in a previous round of the same session.
-
-### Fuzzy matching
-
-Typos and missing accents shouldn't cost you a life. The guess checker normalises both the guess and the answer — strips accents, punctuation, and casing — then runs a `difflib.SequenceMatcher` comparison. 85% similarity passes by default. You can override this with `GAME_FUZZY_THRESHOLD` in your `.env`.
-
-### Sessions
-
-Game state — current round, lives, score, streak, mode — lives in Django's server-side session for the duration of a match. Nothing is written to the database mid-game. The score record is created once, on the victory or game-over screen.
+### 4. Session & Database Cache (Production Ready)
+Active game states (round, lives, score, streak) are handled entirely in-memory using Django's session middleware to keep database writes minimal.
+For production, the project utilizes Django's shared **`DatabaseCache`** backend. This is highly reliable for multi-process Gunicorn deployments on a home server because it ensures rate limits (via `django-allauth`) and session state are shared instantly across all worker processes without needing Redis.
 
 ---
 
-## Architecture
+## The Tech Stack
 
-```mermaid
-graph TD
-    User([Player]) -->|Selects mode, artist, difficulty| Lobby[Lobby]
-    Lobby -->|Queries catalog| LastFM[Last.fm API]
-    LastFM -->|Deduplicates and caches| DB[(SQLite)]
-    DB -->|Pulls track| LyricEngine[Lyric Engine]
-    LyricEngine -->|Fetches lyrics| LRCLIB[LRCLIB API]
-    LRCLIB -->|Scores and excerpts| Generator[Snippet Generator]
-    Generator -->|Sends round data| GameLoop[Game View]
-    GameLoop -->|HTMX submission| FuzzyMatch[Fuzzy Matcher]
-    FuzzyMatch -->|Correct / lose life| GameLoop
-```
+*   **Backend:** Python 3.13, Django 5+
+*   **Frontend:** HTML5, Tailwind CSS, daisyUI, and HTMX (for fast, partial page reloads without full browser refreshes)
+*   **Database:** SQLite (Local Dev) / PostgreSQL (Production)
+*   **Authentication & Security:** Custom User Model, `django-allauth` integration (secured with post-save signals keeping primary email records strictly synchronized), and in-session rate-limiting.
+*   **Serving:** Gunicorn WSGI server and WhiteNoise (with Brotli compression) for serving static files.
+*   **Tooling:** `uv` for python dependency locks and `mise` for local runtime versions.
 
 ---
 
-## Tech Stack
+## Getting Started Locally
 
-* **Backend** — Python 3.13, Django 6
-* **Frontend** — HTMX for partial page updates, Tailwind CSS and daisyUI for styling
-* **Auth** — django-allauth with custom user model, profile avatars, and account settings
-* **Serving** — WhiteNoise for static files, Gunicorn for production
-* **Tooling** — uv for dependency management, mise for runtime versions
-
----
-
-## Project Structure
-
-```
-apps/
-  game/      — game loop, all three modes, scoring, session management
-  lyrics/    — Last.fm and LRCLIB integrations, local caching, excerpt engine
-  pages/     — static pages, theme toggling, SEO
-  users/     — custom user model, profiles, leaderboard
-
-assets/      — Tailwind source, static images
-core/        — settings, URLs, WSGI
-templates/   — HTML templates organised by app
-```
-
----
-
-## Getting Started
-
-You need **mise** and **uv** on your machine before anything else.
+To run this project on your machine, ensure you have **`mise`** and **`uv`** installed, then execute:
 
 ```bash
-make install     # sets up Python, installs dependencies, builds CSS
-make migrate     # creates the database
-make superuser   # creates an admin account
-make run         # starts the dev server at http://127.0.0.1:8000
+# Setup Python toolchain, install dependencies, and build Tailwind CSS
+make install
+
+# Apply database migrations
+make migrate
+
+# Create an administrator account
+make superuser
+
+# Start the local development server at http://127.0.0.1:8000
+make run
 ```
 
-To watch for CSS changes while developing:
-
+To automatically recompile Tailwind CSS changes while developing:
 ```bash
 make tailwind-watch
 ```
 
 ---
 
-## All Commands
+## Full Make Command Reference
 
 | Command | What it does |
 | :--- | :--- |
-| `make install` | Full setup — Python toolchain, dependencies, static assets |
-| `make run` | Dev server with Tailwind |
-| `make tailwind-watch` | Recompiles CSS on template changes |
-| `make test` | Runs the test suite |
-| `make migrations` | Generates migration files from model changes |
-| `make migrate` | Applies migrations |
-| `make superuser` | Creates a Django admin account |
-| `make build` | Production build — minified CSS, collected static files |
-| `make clean` | Removes cache files and build artifacts |
-| `make serve` | Starts Gunicorn |
+| `make install` | Full development environment setup (python dependencies + Tailwind) |
+| `make run` | Runs local dev server |
+| `make tailwind-watch` | Recompiles styling assets on HTML template modifications |
+| `make test` | Runs the 289-case Django unit test suite |
+| `make migrations` | Creates new database migration files |
+| `make migrate` | Applies pending database migrations |
+| `make superuser` | Launches the interactive admin creation utility |
+| `make warmup` | Pre-caches lyric logs for daily challenge artists |
+| `make build` | Prepares production assets (collects static files, builds minified CSS) |
+| `make serve` | Runs the production-grade Gunicorn server locally |
+| `make clean` | Removes temporary build and pycache folders |

@@ -261,3 +261,21 @@ class GameService:
 
     def get_tracks_for_artist(self, artist: str) -> list[dict]:
         return self.lastfm.get_top_tracks(artist)
+
+    def generate_deterministic_round_data(self, artist: str, difficulty: str, date_str: str, round_num: int, mode: str) -> Optional[Dict[str, Any]]:
+        seed_str = f"{date_str}-{artist}-{difficulty}-{mode}-{round_num}"
+        import hashlib
+        seed_bytes = hashlib.sha256(seed_str.encode('utf-8')).digest()
+        seed_int = int.from_bytes(seed_bytes, byteorder='big') % (2**32)
+
+        state = random.getstate()
+        random.seed(seed_int)
+
+        try:
+            if mode == "guess_song":
+                data = self.generate_guess_song_data(artist, difficulty)
+            else:
+                data = self.generate_round_data(artist, difficulty)
+            return data
+        finally:
+            random.setstate(state)

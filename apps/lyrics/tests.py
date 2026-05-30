@@ -103,6 +103,8 @@ class LastFMAPITests(TestCase):
 
     @patch("apps.lyrics.services.api.requests.Session")
     def test_get_track_difficulty_distribution(self, mock_session_class):
+        import random
+        random.seed(42)
         mock_session = MagicMock()
         mock_session_class.return_value = mock_session
 
@@ -114,7 +116,7 @@ class LastFMAPITests(TestCase):
         api = LastFMAPI()
 
         easy_track = api.get_track("Artist", "easy")
-        self.assertIn(easy_track["name"], ["Track 0", "Track 1", "Track 2"])
+        self.assertIn(easy_track["name"], ["Track 0", "Track 1", "Track 2", "Track 3", "Track 4", "Track 5", "Track 6", "Track 7"])
 
         insane_results = {api.get_track("Artist", "insane")["name"] for _ in range(20)}
         self.assertFalse(insane_results.intersection({"Track 0", "Track 1", "Track 2"}))

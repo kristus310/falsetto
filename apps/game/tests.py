@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 from apps.game.services import (
     GameService,
@@ -1064,12 +1065,10 @@ class HistoryViewTests(TestCase):
         self.assertEqual(len(response.context["page_obj"]), 1)
 
     def test_security_isolation_of_scores(self):
-        # Create score for user
         UserScore.objects.create(
             user=self.user, artist="Radiohead", score=300,
             correct_count=3, total_rounds=3, completed=True
         )
-        # Create score for other user
         UserScore.objects.create(
             user=self.other_user, artist="Blur", score=500,
             correct_count=3, total_rounds=3, completed=True
@@ -1078,7 +1077,6 @@ class HistoryViewTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(self.url)
 
-        # User should only see their own scores
         scores = list(response.context["page_obj"])
         self.assertEqual(len(scores), 1)
         self.assertEqual(scores[0].artist, "Radiohead")
@@ -1086,7 +1084,6 @@ class HistoryViewTests(TestCase):
 
     def test_metrics_calculation(self):
         self.client.force_login(self.user)
-        # 1 victory, 1 failed game
         UserScore.objects.create(
             user=self.user, artist="Radiohead", score=300,
             correct_count=3, total_rounds=4, completed=True
@@ -1100,8 +1097,39 @@ class HistoryViewTests(TestCase):
         self.assertEqual(response.context["total_games"], 2)
         self.assertEqual(response.context["highest_score"], 300)
         self.assertEqual(response.context["victory_rate"], 50.0)
-        # Average accuracy of completed games only (3/4 = 75%)
         self.assertEqual(response.context["avg_accuracy"], 75.0)
+
+    def test_metrics_calculation_empty_history(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["total_games"], 0)
+        self.assertEqual(response.context["highest_score"], 0)
+        self.assertEqual(response.context["avg_accuracy"], 0.0)
+        self.assertEqual(response.context["victory_rate"], 0.0)
+
+    def test_metrics_calculation_only_incomplete_games(self):
+        self.client.force_login(self.user)
+        UserScore.objects.create(
+            user=self.user, artist="Radiohead", score=100,
+            correct_count=1, total_rounds=4, completed=False
+        )
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["total_games"], 1)
+        self.assertEqual(response.context["highest_score"], 0)
+        self.assertEqual(response.context["avg_accuracy"], 0.0)
+        self.assertEqual(response.context["victory_rate"], 0.0)
+
+    def test_metrics_calculation_zero_rounds_protection(self):
+        self.client.force_login(self.user)
+        UserScore.objects.create(
+            user=self.user, artist="Radiohead", score=500,
+            correct_count=0, total_rounds=0, completed=True
+        )
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["total_games"], 1)
+        self.assertEqual(response.context["highest_score"], 500)
+        self.assertEqual(response.context["avg_accuracy"], 0.0)
+        self.assertEqual(response.context["victory_rate"], 100.0)
 
     def test_filter_by_mode_and_difficulty(self):
         self.client.force_login(self.user)
@@ -1114,19 +1142,16 @@ class HistoryViewTests(TestCase):
             completed=True, game_mode="guess_song", difficulty="easy"
         )
 
-        # Filter by mode
         response = self.client.get(self.url + "?mode=guess_song")
         self.assertEqual(len(response.context["page_obj"]), 1)
         self.assertEqual(response.context["page_obj"][0].artist, "Blur")
 
-        # Filter by difficulty
         response = self.client.get(self.url + "?difficulty=medium")
         self.assertEqual(len(response.context["page_obj"]), 1)
         self.assertEqual(response.context["page_obj"][0].artist, "Radiohead")
 
     def test_pagination(self):
         self.client.force_login(self.user)
-        # Create 20 scores (page size is 15)
         for i in range(20):
             UserScore.objects.create(
                 user=self.user, artist=f"Artist {i}", score=i * 10, completed=True
@@ -1137,3 +1162,186 @@ class HistoryViewTests(TestCase):
 
         response = self.client.get(self.url + "?page=2")
         self.assertEqual(len(response.context["page_obj"]), 5)
+
+
+@override_settings(STORAGES=_SIMPLE_STORAGE)
+class DailyChallengeViewTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.url = reverse("game:start_daily_challenge")
+        self.user = User.objects.create_user(
+            username="player", email="player@test.com", password="pass123456789"
+        )
+
+    def test_anonymous_redirects(self):
+        response = self.client.post(self.url, {"mode": "complete_lyrics"})
+        self.assertEqual(response.status_code, 302)
+
+    def test_authenticated_starts_daily(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {"mode": "complete_lyrics"})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.client.session.get("is_daily"))
+        self.assertEqual(self.client.session.get("game_mode"), "complete_lyrics")
+        self.assertEqual(self.client.session.get("total_rounds"), settings.DAILY_ROUND_COUNT)
+        self.assertEqual(self.client.session.get("difficulty"), settings.DAILY_DIFFICULTY)
+
+    def test_prevents_duplicate_daily(self):
+        self.client.force_login(self.user)
+        UserScore.objects.create(
+            user=self.user, artist="Radiohead", score=300,
+            completed=True, is_daily=True, game_mode="complete_lyrics"
+        )
+        response = self.client.post(self.url, {"mode": "complete_lyrics"})
+        self.assertEqual(response.status_code, 302)
+        self.assertNotEqual(self.client.session.get("is_daily"), True)
+
+    @patch("apps.game.services.GameService.generate_round_data")
+    def test_deterministic_round_generation(self, mock_generate_round):
+        mock_generate_round.side_effect = lambda artist, difficulty: {
+            "artist": artist,
+            "song": "Fake Song",
+            "lyrics": "Fake Lyrics...",
+            "answer": "fake",
+            "mode": "complete_lyrics",
+        }
+
+        service = GameService()
+        res1 = service.generate_deterministic_round_data("Radiohead", "medium", "2026-05-30", 1, "complete_lyrics")
+        res2 = service.generate_deterministic_round_data("Radiohead", "medium", "2026-05-30", 1, "complete_lyrics")
+
+        self.assertEqual(res1, res2)
+
+
+@override_settings(STORAGES=_SIMPLE_STORAGE)
+class DailyChallengeComprehensiveTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="player2", email="player2@test.com", password="pass123456789"
+        )
+        self.client.force_login(self.user)
+
+    def test_mutual_exclusion_of_daily_challenge_modes(self):
+        UserScore.objects.create(
+            user=self.user,
+            artist="Radiohead",
+            score=300,
+            completed=True,
+            is_daily=True,
+            game_mode="guess_song"
+        )
+
+        response_guess = self.client.post(reverse("game:start_daily_challenge"), {"mode": "guess_song"})
+        response_lyrics = self.client.post(reverse("game:start_daily_challenge"), {"mode": "complete_lyrics"})
+
+        self.assertEqual(response_guess.status_code, 302)
+        self.assertEqual(response_lyrics.status_code, 302)
+
+        self.assertNotEqual(self.client.session.get("is_daily"), True)
+
+    def test_lobby_ui_after_completed_daily_guess_song(self):
+        summary_data = [
+            {"artist": "The Beatles", "song": "Yesterday", "answer": "Yesterday", "correct": True, "mode": "guess_song"}
+        ]
+        UserScore.objects.create(
+            user=self.user,
+            artist="The Beatles",
+            score=100,
+            correct_count=1,
+            total_rounds=1,
+            completed=True,
+            is_daily=True,
+            game_mode="guess_song",
+            summary_data=summary_data
+        )
+
+        response = self.client.get(reverse("game:lobby"))
+        self.assertEqual(response.status_code, 200)
+
+        content = response.content.decode("utf-8")
+        self.assertIn("COMPLETED", content)
+        self.assertIn("Song: Yesterday", content)
+        self.assertNotIn("action=\"/daily/start/\"", content)
+        self.assertNotIn("Copy Score", content)
+        self.assertNotIn("copy-btn", content)
+
+    def test_lobby_ui_after_completed_daily_complete_lyrics(self):
+        summary_data = [
+            {"artist": "The Beatles", "song": "Yesterday", "answer": "yesterday", "correct": True, "mode": "complete_lyrics"}
+        ]
+        UserScore.objects.create(
+            user=self.user,
+            artist="The Beatles",
+            score=100,
+            correct_count=1,
+            total_rounds=1,
+            completed=True,
+            is_daily=True,
+            game_mode="complete_lyrics",
+            summary_data=summary_data
+        )
+
+        response = self.client.get(reverse("game:lobby"))
+        self.assertEqual(response.status_code, 200)
+
+        content = response.content.decode("utf-8")
+        self.assertIn("COMPLETED", content)
+        self.assertIn("Lyric: \"yesterday\"", content)
+        self.assertNotIn("action=\"/daily/start/\"", content)
+        self.assertNotIn("Copy Score", content)
+        self.assertNotIn("copy-btn", content)
+
+    def test_game_over_saves_summary_data_daily(self):
+        s = self.client.session
+        s["game_status"] = "lost"
+        s["game_artist"] = "The Beatles"
+        s["difficulty"] = "medium"
+        s["score"] = 0
+        s["correct_count"] = 0
+        s["total_rounds"] = 3
+        s["lives"] = {"1": False, "2": False, "3": False}
+        s["round_summary"] = [
+            {"artist": "The Beatles", "song": "Yesterday", "answer": "yesterday", "correct": False, "mode": "complete_lyrics"}
+        ]
+        s["score_saved"] = False
+        s["game_mode"] = "complete_lyrics"
+        s["is_daily"] = True
+        s.save()
+
+        response = self.client.get(reverse("game:game_over"))
+        self.assertEqual(response.status_code, 200)
+
+        score = UserScore.objects.filter(user=self.user, is_daily=True).first()
+        self.assertIsNotNone(score)
+        self.assertFalse(score.completed)
+        self.assertEqual(score.summary_data[0]["song"], "Yesterday")
+        self.assertFalse(score.summary_data[0]["correct"])
+
+    def test_victory_saves_summary_data_daily(self):
+        s = self.client.session
+        s["game_status"] = "won"
+        s["game_artist"] = "The Beatles"
+        s["difficulty"] = "medium"
+        s["score"] = 150
+        s["correct_count"] = 1
+        s["total_rounds"] = 1
+        s["lives"] = {"1": True, "2": True, "3": True}
+        s["round_summary"] = [
+            {"artist": "The Beatles", "song": "Yesterday", "answer": "yesterday", "correct": True, "mode": "complete_lyrics"}
+        ]
+        s["score_saved"] = False
+        s["game_mode"] = "complete_lyrics"
+        s["is_daily"] = True
+        s.save()
+
+        response = self.client.get(reverse("game:victory"))
+        self.assertEqual(response.status_code, 200)
+
+        score = UserScore.objects.filter(user=self.user, is_daily=True).first()
+        self.assertIsNotNone(score)
+        self.assertTrue(score.completed)
+        self.assertEqual(score.summary_data[0]["song"], "Yesterday")
+        self.assertTrue(score.summary_data[0]["correct"])

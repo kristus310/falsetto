@@ -4,7 +4,7 @@
             <div tabindex="0" role="button" class="btn btn-ghost lg:hidden text-xl">
                 &#9776;
             </div>
-            <ul tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+            <ul tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[50] mt-3 w-52 p-2 shadow">
                 <li><a href="{% url 'game:lobby' %}">Play</a></li>
                 <li><a href="{% url 'game:history' %}">My History</a></li>
                 <li><a href="{% url 'pages:faq' %}">How to play</a></li>
@@ -60,7 +60,7 @@
                     <img alt="{{ user.username }}" src="{{ user.profile.avatar_url }}" />
                 </div>
             </div>
-            <ul tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+            <ul tabindex="-1" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[50] mt-3 w-52 p-2 shadow">
                 <li><a href="{% url 'users:profile' %}">Profile</a></li>
                 <li><a href="{% url 'users:settings' %}">Settings</a></li>
                 <li><a href="{% url 'account_logout' %}" class="text-error">Logout</a></li>
