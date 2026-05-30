@@ -508,31 +508,7 @@ class IndexViewTests(TestCase):
         self.assertEqual(response.context["most_played_artist"], "None yet!")
         self.assertEqual(response.context["play_count"], 0)
 
-    def test_top_scores_only_completed_and_on_leaderboard(self):
-        hidden = User.objects.create_user(
-            username="ghost", email="ghost@test.com", password="pass123456789"
-        )
-        hidden.profile.show_on_leaderboard = False
-        hidden.profile.save()
 
-        UserScore.objects.create(user=self.user,  artist="Muse", score=500, completed=True)
-        UserScore.objects.create(user=hidden,     artist="Muse", score=999, completed=True)
-        UserScore.objects.create(user=self.user,  artist="Blur", score=200, completed=False)
-
-        response = self.client.get(self.url)
-        top = list(response.context["top_scores"])
-        self.assertEqual(len(top), 1)
-        self.assertEqual(top[0].score, 500)
-
-    def test_top_scores_capped_at_5(self):
-        for i in range(10):
-            u = User.objects.create_user(
-                username=f"user{i}", email=f"u{i}@test.com", password="pass123456789"
-            )
-            UserScore.objects.create(user=u, artist="Artist", score=i * 100, completed=True)
-
-        response = self.client.get(self.url)
-        self.assertLessEqual(len(response.context["top_scores"]), 5)
 
     def test_most_played_artist_for_authenticated_user(self):
         self.client.force_login(self.user)
@@ -1054,77 +1030,110 @@ class ScorePersistenceTests(TestCase):
 
 
 @override_settings(STORAGES=_SIMPLE_STORAGE)
-class LeaderboardViewTests(TestCase):
+class HistoryViewTests(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.url = reverse("game:leaderboard")
+        self.url = reverse("game:history")
         self.user = User.objects.create_user(
-            username="visible", email="v@test.com", password="pass123456789"
+            username="player1", email="p1@test.com", password="pass123456789"
         )
-        self.hidden_user = User.objects.create_user(
-            username="hidden", email="h@test.com", password="pass123456789"
-        )
-        self.hidden_user.profile.show_on_leaderboard = False
-        self.hidden_user.profile.save()
-
-    def test_200_anonymous(self):
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "game/leaderboard.html")
-
-    def test_hidden_users_excluded(self):
-        UserScore.objects.create(user=self.user,        score=500, artist="X", completed=True)
-        UserScore.objects.create(user=self.hidden_user, score=999, artist="X", completed=True)
-        response = self.client.get(self.url)
-        scores = list(response.context["top_scores"])
-        users = [s.user for s in scores]
-        self.assertIn(self.user, users)
-        self.assertNotIn(self.hidden_user, users)
-
-    def test_incomplete_scores_excluded(self):
-        UserScore.objects.create(user=self.user, score=500, artist="X", completed=True)
-        UserScore.objects.create(user=self.user, score=999, artist="X", completed=False)
-        response = self.client.get(self.url)
-        scores = list(response.context["top_scores"])
-        self.assertEqual(len(scores), 1)
-        self.assertEqual(scores[0].score, 500)
-
-    def test_ordered_by_score_descending(self):
-        u2 = User.objects.create_user(
+        self.other_user = User.objects.create_user(
             username="player2", email="p2@test.com", password="pass123456789"
         )
-        UserScore.objects.create(user=self.user, score=300, artist="X", completed=True)
-        UserScore.objects.create(user=u2,        score=700, artist="X", completed=True)
-        response = self.client.get(self.url)
-        scores = list(response.context["top_scores"])
-        self.assertEqual(scores[0].score, 700)
-        self.assertEqual(scores[1].score, 300)
 
-    def test_capped_at_50(self):
-        for i in range(60):
-            u = User.objects.create_user(
-                username=f"lb{i}", email=f"lb{i}@test.com", password="pass123456789"
-            )
-            UserScore.objects.create(user=u, score=i * 10, artist="X", completed=True)
-        response = self.client.get(self.url)
-        self.assertLessEqual(len(response.context["top_scores"]), 50)
-
-    def test_empty_leaderboard_renders(self):
+    def test_anonymous_user_renders_cta(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.context["top_scores"]), 0)
+        self.assertTemplateUsed(response, "game/history.html")
+        self.assertFalse(response.context["is_authenticated"])
 
-    def test_mode_filter_isolates_scores(self):
+    def test_authenticated_user_renders_history(self):
+        self.client.force_login(self.user)
         UserScore.objects.create(
-            user=self.user, score=500, artist="X",
-            completed=True, game_mode="complete_lyrics"
+            user=self.user, artist="Radiohead", score=300,
+            correct_count=3, total_rounds=3, completed=True, game_mode="complete_lyrics"
         )
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_authenticated"])
+        self.assertEqual(response.context["total_games"], 1)
+        self.assertEqual(response.context["highest_score"], 300)
+        self.assertEqual(response.context["avg_accuracy"], 100.0)
+        self.assertEqual(response.context["victory_rate"], 100.0)
+        self.assertEqual(len(response.context["page_obj"]), 1)
+
+    def test_security_isolation_of_scores(self):
+        # Create score for user
         UserScore.objects.create(
-            user=self.user, score=999, artist="X",
-            completed=True, game_mode="guess_song"
+            user=self.user, artist="Radiohead", score=300,
+            correct_count=3, total_rounds=3, completed=True
         )
-        response = self.client.get(self.url + "?mode=guess_song")
-        scores = list(response.context["top_scores"])
+        # Create score for other user
+        UserScore.objects.create(
+            user=self.other_user, artist="Blur", score=500,
+            correct_count=3, total_rounds=3, completed=True
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+
+        # User should only see their own scores
+        scores = list(response.context["page_obj"])
         self.assertEqual(len(scores), 1)
-        self.assertEqual(scores[0].score, 999)
+        self.assertEqual(scores[0].artist, "Radiohead")
+        self.assertEqual(response.context["total_games"], 1)
+
+    def test_metrics_calculation(self):
+        self.client.force_login(self.user)
+        # 1 victory, 1 failed game
+        UserScore.objects.create(
+            user=self.user, artist="Radiohead", score=300,
+            correct_count=3, total_rounds=4, completed=True
+        )
+        UserScore.objects.create(
+            user=self.user, artist="Blur", score=100,
+            correct_count=1, total_rounds=4, completed=False
+        )
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.context["total_games"], 2)
+        self.assertEqual(response.context["highest_score"], 300)
+        self.assertEqual(response.context["victory_rate"], 50.0)
+        # Average accuracy of completed games only (3/4 = 75%)
+        self.assertEqual(response.context["avg_accuracy"], 75.0)
+
+    def test_filter_by_mode_and_difficulty(self):
+        self.client.force_login(self.user)
+        UserScore.objects.create(
+            user=self.user, artist="Radiohead", score=300,
+            completed=True, game_mode="complete_lyrics", difficulty="medium"
+        )
+        UserScore.objects.create(
+            user=self.user, artist="Blur", score=200,
+            completed=True, game_mode="guess_song", difficulty="easy"
+        )
+
+        # Filter by mode
+        response = self.client.get(self.url + "?mode=guess_song")
+        self.assertEqual(len(response.context["page_obj"]), 1)
+        self.assertEqual(response.context["page_obj"][0].artist, "Blur")
+
+        # Filter by difficulty
+        response = self.client.get(self.url + "?difficulty=medium")
+        self.assertEqual(len(response.context["page_obj"]), 1)
+        self.assertEqual(response.context["page_obj"][0].artist, "Radiohead")
+
+    def test_pagination(self):
+        self.client.force_login(self.user)
+        # Create 20 scores (page size is 15)
+        for i in range(20):
+            UserScore.objects.create(
+                user=self.user, artist=f"Artist {i}", score=i * 10, completed=True
+            )
+
+        response = self.client.get(self.url)
+        self.assertEqual(len(response.context["page_obj"]), 15)
+
+        response = self.client.get(self.url + "?page=2")
+        self.assertEqual(len(response.context["page_obj"]), 5)

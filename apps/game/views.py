@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
 from django.http import HttpRequest, HttpResponse
 from django.contrib import messages
-from django.db.models import Count
+from django.db.models import Count, Avg, Max, F, FloatField
+from django.db.models.functions import Cast
+from django.core.paginator import Paginator
 from .forms import LyricsGuessForm
 from .services import GameService, is_correct_guess, calculate_score
 
@@ -27,19 +29,9 @@ def index(request: HttpRequest) -> HttpResponse:
             most_played = most_played_data["artist"]
             play_count = most_played_data["times_played"]
 
-    top_scores = (
-        UserScore.objects.filter(
-            completed=True,
-            user__profile__show_on_leaderboard=True,
-        )
-        .select_related("user")
-        .order_by("-score", "-created_at")[:5]
-    )
-
     context = {
         "most_played_artist": most_played,
         "play_count": play_count,
-        "top_scores": top_scores,
     }
     return render(request, "game/index.html", context=context)
 
@@ -396,23 +388,56 @@ def game_over(request: HttpRequest) -> HttpResponse:
     return render(request, "game/game-over.html", context)
 
 
-def leaderboard(request: HttpRequest) -> HttpResponse:
-    selected_mode = request.GET.get("mode", "complete_lyrics")
-    if selected_mode not in _VALID_MODES:
-        selected_mode = "complete_lyrics"
+def history(request: HttpRequest) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return render(request, "game/history.html", {
+            "is_authenticated": False,
+        })
 
-    top_scores = (
-        UserScore.objects.filter(
-            completed=True,
-            game_mode=selected_mode,
-            user__profile__show_on_leaderboard=True,
-        )
-        .select_related("user")
-        .order_by("-score", "-created_at")[:50]
+    # Available choices for filtering
+    selected_mode = request.GET.get("mode", "")
+    selected_difficulty = request.GET.get("difficulty", "")
+
+    # Query scores strictly for the logged-in user
+    scores = UserScore.objects.filter(user=request.user)
+
+    if selected_mode in _VALID_MODES:
+        scores = scores.filter(game_mode=selected_mode)
+    if selected_difficulty in _VALID_DIFFICULTIES:
+        scores = scores.filter(difficulty=selected_difficulty)
+
+    scores = scores.order_by("-created_at")
+
+    # Compute personal stats/metrics
+    total_games = UserScore.objects.filter(user=request.user).count()
+    completed_games = UserScore.objects.filter(user=request.user, completed=True)
+
+    # Calculate avg accuracy & highest score securely and performantly, avoiding division by zero in SQL
+    metrics = completed_games.filter(total_rounds__gt=0).aggregate(
+        avg_accuracy=Avg(Cast(F("correct_count"), FloatField()) / Cast(F("total_rounds"), FloatField()) * 100),
+        highest_score=Max("score")
     )
+
+    avg_accuracy = round(metrics["avg_accuracy"] or 0.0, 1)
+    highest_score = metrics["highest_score"] or 0
+    completed_count = completed_games.count()
+    victory_rate = round(completed_count / total_games * 100, 1) if total_games > 0 else 0.0
+
+    # Paginate the scores list
+    page_number = request.GET.get("page", 1)
+    paginator = Paginator(scores, 15)  # 15 scores per page
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "top_scores": top_scores,
+        "is_authenticated": True,
+        "page_obj": page_obj,
         "selected_mode": selected_mode,
+        "selected_difficulty": selected_difficulty,
         "available_modes": UserScore.GameModes.choices,
+        "available_difficulties": UserScore.Difficulties.choices,
+        "total_games": total_games,
+        "highest_score": highest_score,
+        "avg_accuracy": avg_accuracy,
+        "victory_rate": victory_rate,
     }
-    return render(request, "game/leaderboard.html", context)
+    return render(request, "game/history.html", context)

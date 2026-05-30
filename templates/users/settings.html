@@ -184,14 +184,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="preferences">
 
-                    <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
-                        <div>
-                            <p class="font-semibold text-sm">Show on leaderboard</p>
-                            <p class="text-xs text-base-content/40 mt-0.5">Make your scores visible to other players</p>
-                        </div>
-                        <input type="checkbox" name="show_on_leaderboard" class="toggle toggle-primary shrink-0"
-                            {% if user.profile.show_on_leaderboard %}checked{% endif %} />
-                    </div>
+
 
                     <div class="flex items-center justify-between py-4 border-b border-base-300 gap-6">
                         <div>

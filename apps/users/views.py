@@ -114,11 +114,9 @@ def settings(request: HttpRequest) -> HttpResponse:
             except ValueError:
                 rounds = 3
 
-            user_profile.show_on_leaderboard = "show_on_leaderboard" in request.POST
             user_profile.default_difficulty = difficulty
             user_profile.default_rounds = rounds
             user_profile.save(update_fields=[
-                "show_on_leaderboard",
                 "default_difficulty",
                 "default_rounds",
             ])

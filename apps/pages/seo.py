@@ -18,7 +18,7 @@ _PRIVATE_DISALLOW = [
     "Disallow: /lobby/",
     "Disallow: /victory/",
     "Disallow: /game-over/",
-    "Disallow: /leaderboard/",
+    "Disallow: /history/",
     "Disallow: /accounts/",
     "Disallow: /profile/",
     "Disallow: /settings/",

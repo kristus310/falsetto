@@ -83,6 +83,9 @@ class UserScore(models.Model):
         GUESS_SONG = "guess_song", "Guess Song"
         PICK_SONG = "pick_song", "Pick Song"
 
+    DIFFICULTIES = Difficulties.choices
+    GAME_MODES = GameModes.choices
+
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="scores", null=True, blank=True
     )
