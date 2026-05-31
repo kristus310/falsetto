@@ -211,17 +211,6 @@
             {% endif %}
         </div>
 
-        <div id="game-feedback" class="w-full">
-            {% if form.guess.errors %}
-            <div class="text-error text-center font-bold mt-2">{{ form.guess.errors|first }}</div>
-            {% endif %}
-            {% if messages %}
-            <div class="text-error text-center font-bold mt-2">
-                {% for message in messages %}{{ message }}{% endfor %}
-            </div>
-            {% endif %}
-        </div>
-
     </div>
 
 </div>

@@ -75,6 +75,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.pages.context_processors.theme_processor",
+                "apps.users.context_processors.daily_challenge_status",
             ],
         },
     },

@@ -104,7 +104,6 @@ def lobby(request: HttpRequest) -> HttpResponse:
         "default_rounds": default_rounds,
         "daily_artist": daily_artist,
         "daily_score": daily_score,
-        "has_played_daily": daily_score is not None,
     })
 
 

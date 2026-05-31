@@ -13,24 +13,25 @@
     <script src="{% static 'js/htmx.min.js' %}" defer></script>
 </head>
 
-<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="min-h-screen bg-base-100 overflow-x-hidden">
+<body hx-headers="{'X-CSRFToken': '{{ csrf_token }}}" class="min-h-screen bg-base-100 overflow-x-hidden">
 
     {% block navbar %}
-    {% include 'components/navbar.html' %}
+    {% include "components/navbar.html" %}
     {% endblock navbar %}
 
     {% if messages %}
-    <div class="max-w-xl mx-auto px-6 mt-4 flex flex-col gap-2">
+    <div
+        class="fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-xl px-6 z-50 flex flex-col gap-2 pointer-events-none">
         {% for message in messages %}
-        <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} shadow-lg flex justify-between items-center transition-all duration-300"
+        <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} shadow-lg flex justify-between items-center transition-all duration-300 pointer-events-auto"
             id="msg-{{ forloop.counter }}">
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     class="stroke-current shrink-0 w-6 h-6">
-                    {% if message.tags == 'error' %}
+                    {% if message.tags == "error" %}
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    {% elif message.tags == 'success' %}
+                    {% elif message.tags == "success" %}
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     {% else %}
@@ -58,7 +59,7 @@
 
 
     {% block footer %}
-    {% include 'components/footer.html' %}
+    {% include "components/footer.html" %}
     {% endblock footer %}
 
     <div id="global-loading-overlay"
@@ -86,16 +87,16 @@
         function togglePasswordVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
             if (!input) return;
-            const eyeOpen = btn.querySelector('.eye-open');
-            const eyeClosed = btn.querySelector('.eye-closed');
+            const eyeOpen = btn.querySelector("eye-open");
+            const eyeClosed = btn.querySelector(".eye-closed");
             if (input.type === "password") {
                 input.type = "text";
-                eyeOpen.classList.add('hidden');
-                eyeClosed.classList.remove('hidden');
+                eyeOpen.classList.add("hidden");
+                eyeClosed.classList.remove("hidden");
             } else {
                 input.type = "password";
-                eyeOpen.classList.remove('hidden');
-                eyeClosed.classList.add('hidden');
+                eyeOpen.classList.remove("hidden");
+                eyeClosed.classList.add("hidden");
             }
         }
     </script>
