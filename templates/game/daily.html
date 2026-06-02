@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Daily Challenge{% endblock %}
+
+{% block content %}
+
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 py-20">
+    <div class="w-full max-w-xl flex flex-col gap-8">
+
+        <div class="text-center flex flex-col gap-3">
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight leading-none">
+                Daily <span class="text-primary">Challenge</span>
+            </h1>
+            <p class="text-base-content/50 text-sm max-w-xs mx-auto">
+                Test your music skills with today's deterministic challenge. Only 1 attempt is allowed per mode per day!
+            </p>
+        </div>
+
+        {% if not has_played_daily %}
+        <div class="card bg-base-200 border border-base-300 shadow-xl overflow-hidden rounded-3xl">
+            <div class="card-body p-6 sm:p-8 gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl animate-bounce">📅</span>
+                    <div>
+                        <h2 class="font-black text-lg tracking-tight">Today's Selection</h2>
+                        <p class="text-xs text-base-content/40 mt-0.5">Ready to test your general music knowledge?</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between border-b border-base-300 pb-4 mt-2">
+                    <div>
+                        <span class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Featured
+                            Artist</span>
+                        <p class="font-black text-lg text-primary">{{ daily_artist }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span
+                            class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Difficulty</span>
+                        <div>
+                            <span
+                                class="badge badge-secondary badge-sm font-extrabold uppercase px-3 py-2.5">{{ daily_difficulty|upper }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between border-b border-base-300 pb-4">
+                    <div>
+                        <span class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Rounds</span>
+                        <p class="font-black text-md text-base-content">{{ daily_rounds }} Rounds</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Rules</span>
+                        <p class="text-xs font-semibold text-base-content/60">No retries, deterministic music</p>
+                    </div>
+                </div>
+
+                {% if user.is_authenticated %}
+                <div class="flex flex-col sm:flex-row gap-3 mt-2">
+                    <form method="POST" action="{% url 'game:start_daily_challenge' %}" class="flex-1"
+                        onsubmit="showGlobalLoader('Starting Challenge...', 'Spinning up today\'s selected lyric snippets...');">
+                        {% csrf_token %}
+                        <input type="hidden" name="mode" value="complete_lyrics" />
+                        <button type="submit"
+                            class="btn btn-primary btn-md rounded-xl font-bold uppercase tracking-wide w-full shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                            Complete Lyrics
+                        </button>
+                    </form>
+                    <form method="POST" action="{% url 'game:start_daily_challenge' %}" class="flex-1"
+                        onsubmit="showGlobalLoader('Starting Challenge...', 'Spinning up today\'s selected lyric snippets...');">
+                        {% csrf_token %}
+                        <input type="hidden" name="mode" value="guess_song" />
+                        <button type="submit"
+                            class="btn btn-secondary btn-md rounded-xl font-bold uppercase tracking-wide w-full shadow-lg shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                            Guess the Song
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="text-center p-6 border border-dashed border-base-300 rounded-2xl bg-base-100/30">
+                    <p class="text-xs font-semibold text-base-content/60">Log in to play today's Daily Challenges and
+                        track your record on the global leaderboard!</p>
+                    <div class="flex justify-center gap-3 mt-4">
+                        <a href="{% url 'account_login' %}?next={{ request.path }}"
+                            class="btn btn-outline btn-sm rounded-lg font-bold">Sign In</a>
+                        <a href="{% url 'account_signup' %}" class="btn btn-primary btn-sm rounded-lg font-bold">Join
+                            Free</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card bg-base-200 border border-base-300 shadow-xl overflow-hidden rounded-3xl">
+            <div class="card-body p-6 sm:p-8 gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🎉</span>
+                    <div>
+                        <h2 class="font-black text-lg uppercase tracking-tight">Today's Challenge</h2>
+                        <span class="badge badge-success badge-sm font-extrabold uppercase mt-0.5">COMPLETED</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 bg-base-100/60 rounded-xl p-4 border border-base-300/40 text-center">
+                    <div>
+                        <span class="text-[9px] font-black uppercase text-base-content/40 tracking-wider">Score</span>
+                        <p class="font-black text-success text-lg mt-0.5">
+                            {{ daily_score.correct_count }}/{{ daily_score.total_rounds }}</p>
+                    </div>
+                    <div>
+                        <span
+                            class="text-[9px] font-black uppercase text-base-content/40 tracking-wider">Accuracy</span>
+                        <p class="font-black text-info text-lg mt-0.5">{{ daily_score.accuracy }}%</p>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-black uppercase text-base-content/40 tracking-wider">Points</span>
+                        <p class="font-black text-primary text-lg mt-0.5">{{ daily_score.points }}</p>
+                    </div>
+                </div>
+
+                {% if daily_score.summary_data %}
+                <div class="flex flex-col gap-2 mt-2">
+                    <span class="text-[10px] font-black uppercase text-base-content/40 tracking-wider">Your
+                        Performance</span>
+                    {% for item in daily_score.summary_data %}
+                    <div
+                        class="flex items-center justify-between bg-base-100/40 border border-base-300/50 rounded-xl px-3 py-2.5 text-xs">
+                        <div class="truncate max-w-[65%]">
+                            <span class="font-bold text-base-content">{{ item.song }}</span>
+                            <span class="text-base-content/40 mx-0.5">-</span>
+                            <span class="text-base-content/60">{{ item.artist }}</span>
+                        </div>
+                        <div class="shrink-0">
+                            {% if item.correct %}
+                            <span class="text-success font-bold flex items-center gap-1">
+                                ✓
+                                {% if item.mode == 'guess_song' or daily_score.game_mode == 'guess_song' %}
+                                <span class="opacity-60 font-medium">Song: {{ item.answer }}</span>
+                                {% else %}
+                                <span class="opacity-60 font-medium">Lyric: "{{ item.answer }}"</span>
+                                {% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-error font-bold flex items-center gap-1">
+                                ✗
+                                {% if item.mode == 'guess_song' or daily_score.game_mode == 'guess_song' %}
+                                <span class="opacity-60 font-medium">Answer: {{ item.answer }}</span>
+                                {% else %}
+                                <span class="opacity-60 font-medium">Answer: "{{ item.answer }}"</span>
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <p class="text-center text-sm text-base-content/30">
+            <a href="{% url 'game:lobby' %}" class="link link-hover">← Back to custom lobby</a>
+        </p>
+
+    </div>
+</div>
+
+{% endblock %}

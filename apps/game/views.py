@@ -107,10 +107,33 @@ def lobby(request: HttpRequest) -> HttpResponse:
     })
 
 
+def daily_lobby(request: HttpRequest) -> HttpResponse:
+    daily_score = None
+    today = datetime.date.today()
+    artists = getattr(settings, "DAILY_ARTISTS", ["Coldplay"])
+    day_index = today.toordinal() % len(artists)
+    daily_artist = artists[day_index]
+
+    if request.user.is_authenticated:
+        daily_score = UserScore.objects.filter(
+            user=request.user, is_daily=True, created_at__date=today
+        ).first()
+
+    difficulty = getattr(settings, "DAILY_DIFFICULTY", "medium")
+    total_rounds = getattr(settings, "DAILY_ROUND_COUNT", 3)
+
+    return render(request, "game/daily.html", {
+        "daily_artist": daily_artist,
+        "daily_score": daily_score,
+        "daily_difficulty": difficulty,
+        "daily_rounds": total_rounds,
+    })
+
+
 def start_daily_challenge(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         messages.error(request, "Please log in or create an account to play the Daily Challenge!")
-        return redirect("game:lobby")
+        return redirect("game:daily_lobby")
 
     if request.method == "POST":
         mode = request.POST.get("mode", "complete_lyrics")
@@ -124,7 +147,7 @@ def start_daily_challenge(request: HttpRequest) -> HttpResponse:
             created_at__date=today,
         ).exists():
             messages.warning(request, "You have already completed today's Daily Challenge!")
-            return redirect("game:lobby")
+            return redirect("game:daily_lobby")
 
         artists = getattr(settings, "DAILY_ARTISTS", ["Coldplay"])
         day_index = today.toordinal() % len(artists)
@@ -153,7 +176,7 @@ def start_daily_challenge(request: HttpRequest) -> HttpResponse:
 
         return redirect("game:game")
 
-    return redirect("game:lobby")
+    return redirect("game:daily_lobby")
 
 
 def pick_song_lobby(request: HttpRequest) -> HttpResponse:

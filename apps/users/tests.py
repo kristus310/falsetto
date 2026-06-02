@@ -746,6 +746,18 @@ class SettingsViewTests(TestCase):
         msgs = [str(m) for m in response.context["messages"]]
         self.assertTrue(any("pick" in m.lower() or "image" in m.lower() for m in msgs))
 
+    def test_update_preferences(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, {
+            "action": "preferences",
+            "default_difficulty": "insane",
+            "default_rounds": 10,
+        })
+        self.assertRedirects(response, self.url)
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.default_difficulty, "insane")
+        self.assertEqual(self.user.profile.default_rounds, 10)
+
 
 @override_settings(STORAGES=_SIMPLE_STORAGE)
 class DeleteAccountViewTests(TestCase):

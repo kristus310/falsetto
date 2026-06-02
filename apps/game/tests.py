@@ -1242,7 +1242,7 @@ class DailyChallengeComprehensiveTests(TestCase):
 
         self.assertNotEqual(self.client.session.get("is_daily"), True)
 
-    def test_lobby_ui_after_completed_daily_guess_song(self):
+    def test_daily_lobby_ui_after_completed_daily_guess_song(self):
         summary_data = [
             {"artist": "The Beatles", "song": "Yesterday", "answer": "Yesterday", "correct": True, "mode": "guess_song"}
         ]
@@ -1258,7 +1258,7 @@ class DailyChallengeComprehensiveTests(TestCase):
             summary_data=summary_data
         )
 
-        response = self.client.get(reverse("game:lobby"))
+        response = self.client.get(reverse("game:daily_lobby"))
         self.assertEqual(response.status_code, 200)
 
         content = response.content.decode("utf-8")
@@ -1268,7 +1268,7 @@ class DailyChallengeComprehensiveTests(TestCase):
         self.assertNotIn("Copy Score", content)
         self.assertNotIn("copy-btn", content)
 
-    def test_lobby_ui_after_completed_daily_complete_lyrics(self):
+    def test_daily_lobby_ui_after_completed_daily_complete_lyrics(self):
         summary_data = [
             {"artist": "The Beatles", "song": "Yesterday", "answer": "yesterday", "correct": True, "mode": "complete_lyrics"}
         ]
@@ -1284,7 +1284,7 @@ class DailyChallengeComprehensiveTests(TestCase):
             summary_data=summary_data
         )
 
-        response = self.client.get(reverse("game:lobby"))
+        response = self.client.get(reverse("game:daily_lobby"))
         self.assertEqual(response.status_code, 200)
 
         content = response.content.decode("utf-8")

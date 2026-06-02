@@ -120,6 +120,8 @@ def settings(request: HttpRequest) -> HttpResponse:
                 "default_difficulty",
                 "default_rounds",
             ])
+            messages.success(request, "Preferences updated successfully.")
+            return redirect("users:settings")
 
     context = {
         "username_form": username_form,

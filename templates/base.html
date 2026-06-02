@@ -69,12 +69,23 @@
             <span class="loading loading-infinity loading-lg text-primary scale-150 animate-pulse"></span>
             <h3 class="text-xl font-black mt-2">Starting round...</h3>
             <p class="text-xs text-base-content/60 max-w-xs leading-relaxed">Please wait a moment while we spin up the
-                lyrics and configure the game.</p>
+                lyrics and set up the game.</p>
+            <div class="flex gap-2 mt-4 justify-center">
+                <button type="button"
+                    onclick="const overlay = document.getElementById('global-loading-overlay'); overlay.classList.add('hidden'); overlay.classList.remove('flex');"
+                    class="btn btn-ghost btn-xs sm:btn-sm text-success border-success rounded-xl hover:bg-success/90 hover:text-base-content font-bold">
+                    Dismiss
+                </button>
+                <a href=" {% url 'game:lobby' %}"
+                    class="btn btn-ghost btn-xs sm:btn-sm text-error border-error rounded-xl hover:bg-error/90 hover:text-base-content font-bold">
+                    Cancel & Leave
+                </a>
+            </div>
         </div>
     </div>
 
     <script>
-        function showGlobalLoader(title = "Starting round...", description = "Please wait a moment while we spin up the lyrics and configure the game.") {
+        function showGlobalLoader(title = "Starting round...", description = "Please wait a moment while we get up the lyrics and load the game.") {
             const overlay = document.getElementById("global-loading-overlay");
             if (overlay) {
                 overlay.querySelector("h3").textContent = title;

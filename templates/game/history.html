@@ -10,12 +10,11 @@
         {% if not is_authenticated %}
         <div
             class="hero min-h-[60vh] bg-base-200 rounded-3xl border border-base-300 shadow-xl overflow-hidden relative">
-            <div
-                class="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-secondary/10 pointer-events-none">
+            <div class="absolute inset-0 bg-base-200 border border-base-300 pointer-events-none">
             </div>
             <div class="hero-content text-center flex-col p-8 md:p-12 max-w-xl z-10">
                 <div
-                    class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-primary-content shadow-lg shadow-primary/20 mb-6 animate-pulse">
+                    class="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-primary-content shadow-lg shadow-primary/20 mb-6 animate-pulse">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="size-10">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -35,7 +34,7 @@
                         Sign In
                     </a>
                     <a href="{% url 'account_signup' %}"
-                        class="btn btn-primary btn-lg px-8 rounded-xl font-bold uppercase tracking-wide shadow-lg shadow-primary/20">
+                        class="btn btn-primary btn-lg px-8 rounded-xl font-bold uppercase tracking-wide shadow-lg">
                         Join Free Now
                     </a>
                 </div>

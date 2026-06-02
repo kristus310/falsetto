@@ -57,7 +57,7 @@
 
 <form method="POST" action="{% url 'game:pick_song_lobby' %}" id="start-form"
     class="hidden flex-col gap-6 mt-4 pt-6 border-t border-base-300"
-    onsubmit="if(this.checkValidity()) { showGlobalLoader('Starting round...', 'Finding the song lyrics and compiling the game snippet...'); }">
+    onsubmit="if(this.checkValidity()) { showGlobalLoader('Starting round...', 'Finding artist tracks, caching music details, and loading lyric snippets...'); }">
     {% csrf_token %}
     <div class="divider m-0"></div>
 

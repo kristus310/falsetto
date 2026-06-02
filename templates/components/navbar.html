@@ -39,31 +39,29 @@
     </div>
     <div class="navbar-end flex items-center gap-1 sm:gap-3">
         <div>
-            {% if has_played_daily %}
-            <div class="badge badge-success">
-                <svg class="size-[1em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <g fill="currentColor" stroke-linejoin="miter" stroke-linecap="butt">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-linecap="square"
-                            stroke-miterlimit="10" stroke-width="2"></circle>
-                        <polyline points="7 13 10 16 17 8" fill="none" stroke="currentColor" stroke-linecap="square"
-                            stroke-miterlimit="10" stroke-width="2"></polyline>
-                    </g>
-                </svg>
-                Completed Daily!
-            </div>
-            {% else %}
-            <div class="badge badge-success">
-                <svg class="size-[1em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <g fill="currentColor" stroke-linejoin="miter" stroke-linecap="butt">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-linecap="square"
-                            stroke-miterlimit="10" stroke-width="2"></circle>
-                        <polyline points="7 13 10 16 17 8" fill="none" stroke="currentColor" stroke-linecap="square"
-                            stroke-miterlimit="10" stroke-width="2"></polyline>
-                    </g>
-                </svg>
-                Play Daily!
-            </div>
-            {% endif %}
+            <a href="{% url 'game:daily_lobby' %}" class="hover:opacity-80 transition-opacity">
+                {% if has_played_daily %}
+                <div class="badge badge-success font-black text-xs gap-1 cursor-pointer">
+                    <svg class="size-[1.1em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <g fill="none" stroke="currentColor" stroke-linejoin="miter" stroke-linecap="butt" stroke-miterlimit="10" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="7 13 10 16 17 8"></polyline>
+                        </g>
+                    </svg>
+                    Completed Daily!
+                </div>
+                {% else %}
+                <div class="badge badge-success font-black text-xs gap-1 cursor-pointer animate-pulse">
+                    <svg class="size-[1.1em]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <g fill="none" stroke="currentColor" stroke-linejoin="miter" stroke-linecap="butt" stroke-miterlimit="10" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="7 13 10 16 17 8"></polyline>
+                        </g>
+                    </svg>
+                    Play Daily!
+                </div>
+                {% endif %}
+            </a>
         </div>
         <!--
 
