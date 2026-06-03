@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 from .models import User, UserProfile, UserScore
 
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = ["email", "username", "is_staff", "is_active", "date_joined"]
@@ -23,10 +24,12 @@ class CustomUserAdmin(UserAdmin):
         }),
     )
 
+
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ["user", "show_on_leaderboard", "default_difficulty", "default_rounds"]
     search_fields = ["user__email", "user__username"]
+
 
 @admin.register(UserScore)
 class UserScoreAdmin(admin.ModelAdmin):

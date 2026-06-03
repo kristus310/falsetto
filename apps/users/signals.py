@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from .models import UserProfile
 
+
 User = get_user_model()
 
 def _delete_file(field):
@@ -13,9 +14,11 @@ def _delete_file(field):
         except FileNotFoundError:
             pass
 
+
 @receiver(post_delete, sender=UserProfile)
 def delete_avatar_on_profile_delete(sender, instance, **kwargs):
     _delete_file(instance.avatar)
+
 
 @receiver(pre_save, sender=UserProfile)
 def delete_old_avatar_on_update(sender, instance, **kwargs):
