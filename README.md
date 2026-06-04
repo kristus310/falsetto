@@ -1,6 +1,6 @@
 # Falsetto
 
-Hi! Welcome to **Falsetto** — a music trivia game I built as a passion project to test how well we actually know our favorite artists (not just their top-played radio hits).
+Hi! Welcome to **Falsetto** - a music trivia game I built as a passion project to test how well we actually know our favorite artists (not just their top-played radio hits).
 
 It is a fully responsive web application built with **Django**, **Tailwind CSS**, and **HTMX**. It queries live music databases, parses lyrics dynamically, and serves up smooth, fast trivia directly in your browser.
 
@@ -50,7 +50,7 @@ Once a track is selected, the game talks to **LRCLIB** to fetch synchronized and
 *   Scoring lines based on meaningful word density (excluding generic filler words like "oh", "yeah", "la").
 *   Discarding any snippets containing the song's title to prevent accidental giveaways.
 
-The highest-scoring block of 3–4 lines is chosen as the round's excerpt.
+The highest-scoring block of 3-4 lines is chosen as the round's excerpt.
 
 ### 3. Fuzzy Matching
 To make sure a missing accent or minor typo doesn't cost you a life, the guess checker normalizes both the input and the answer by stripping accents, capitalization, and punctuation. It then performs a `difflib.SequenceMatcher` comparison. By default, an **85% similarity** passes as correct.
