@@ -99,7 +99,7 @@ make run
 | `make install` | Full development environment setup (python dependencies + Tailwind) |
 | `make run` | Runs local dev server |
 | `make tailwind-watch` | Recompiles styling assets on HTML template modifications |
-| `make test` | Runs the 518 case Django unit test suite |
+| `make test` | Runs the 639 case Django unit test suite |
 | `make migrations` | Creates new database migration files |
 | `make migrate` | Applies pending database migrations |
 | `make superuser` | Launches the interactive admin creation utility |
